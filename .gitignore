@@ -1,0 +1,12 @@
+node_modules
+.idea
+test/temp
+npm-debug.log
+out/
+/.simlife/
+simlife-jdl.jh
+.sonar
+coverage/*
+sonar-project.properties
+.nyc_output/*
+simlife-core.iml
