@@ -23,39 +23,39 @@ const JDLEntity = require('../../../lib/core/jdl_entity');
 const JDLField = require('../../../lib/core/jdl_field');
 const JDLValidation = require('../../../lib/core/jdl_validation');
 
+const fail = expect.fail;
+
 describe('JDLEntity', () => {
   describe('::new', () => {
-    context('when not passing any argument', () => {
+    describe('when not passing any argument', () => {
       it('fails', () => {
-        expect(() => {
+        try {
           new JDLEntity();
-        }).to.throw('The entity name is mandatory to create an entity.');
+          fail();
+        } catch (error) {
+          expect(error.name).to.eq('NullPointerException');
+        }
       });
     });
-    context('when not passing the name', () => {
+    describe('when not passing the name', () => {
       it('fails', () => {
-        expect(() => {
+        try {
           new JDLEntity({ name: null, comment: 'My entity' });
-        }).to.throw('The entity name is mandatory to create an entity.');
+          fail();
+        } catch (error) {
+          expect(error.name).to.eq('NullPointerException');
+        }
       });
     });
-    context('when not passing the table name', () => {
-      let entity = null;
-
-      before(() => {
-        entity = new JDLEntity({ name: 'Abc' });
-      });
-
+    describe('when not passing the table name', () => {
       it('uses the names as value', () => {
+        const entity = new JDLEntity({ name: 'Abc' });
         expect(entity.tableName).to.eq('Abc');
       });
     });
-    context('when passing arguments', () => {
-      let entity = null;
-      let args = {};
-
-      before(() => {
-        args = {
+    describe('when passing arguments', () => {
+      it('creates a new instance', () => {
+        const args = {
           name: 'Abc',
           tableName: 'String',
           comment: 'comment',
@@ -66,47 +66,54 @@ describe('JDLEntity', () => {
             validations: [new JDLValidation()]
           })]
         };
-        entity = new JDLEntity(args);
-      });
-
-      it('creates a new instance', () => {
+        const entity = new JDLEntity(args);
         expect(entity.name).to.eq(args.name);
         expect(entity.tableName).to.eq(args.tableName);
         expect(entity.comment).to.eq(args.comment);
         expect(entity.fields).to.deep.eq(args.fields);
       });
     });
+    describe('when passing a reserved keyword as name', () => {
+      it('fails', () => {
+        try {
+          new JDLEntity({ name: 'class' });
+          fail();
+        } catch (error) {
+          expect(error.name).to.eq('IllegalNameException');
+        }
+      });
+    });
   });
   describe('::isValid', () => {
-    context('when checking the validity of an invalid object', () => {
-      context('because it is nil or invalid', () => {
+    describe('when checking the validity of an invalid object', () => {
+      describe('because it is nil or invalid', () => {
         it('returns false', () => {
           expect(JDLEntity.isValid(null)).to.be.false;
           expect(JDLEntity.isValid(undefined)).to.be.false;
         });
       });
-      context('without a name attribute', () => {
+      describe('without a name attribute', () => {
         it('returns false', () => {
           expect(
             JDLEntity.isValid({ tableName: 'Something', fields: [] })
           ).to.be.false;
         });
       });
-      context('with a reserved keyword as name', () => {
+      describe('with a reserved keyword as name', () => {
         it('returns false', () => {
           expect(
             JDLEntity.isValid({ name: 'class' })
           ).to.be.false;
         });
       });
-      context('without a table name', () => {
+      describe('without a table name', () => {
         it('returns false', () => {
           expect(
             JDLEntity.isValid({ name: 'Something', fields: [] })
           ).to.be.false;
         });
       });
-      context('because its fields are invalid', () => {
+      describe('because its fields are invalid', () => {
         it('returns false', () => {
           expect(
             JDLEntity.isValid({
@@ -122,7 +129,7 @@ describe('JDLEntity', () => {
         });
       });
     });
-    context('when checking the validity of a valid object', () => {
+    describe('when checking the validity of a valid object', () => {
       it('returns true', () => {
         expect(
           JDLEntity.isValid({ name: 'Valid', tableName: 't_valid', fields: [] })
@@ -131,69 +138,63 @@ describe('JDLEntity', () => {
     });
   });
   describe('#addField', () => {
-    let entity = null;
-
-    before(() => {
-      entity = new JDLEntity({
-        name: 'Abc',
-        tableName: 'String'
-      });
-    });
-
-    context('when adding an invalid field', () => {
+    describe('when adding an invalid field', () => {
       it('fails', () => {
-        expect(() => {
+        const entity = new JDLEntity({
+          name: 'Abc',
+          tableName: 'String'
+        });
+        try {
           entity.addField(null);
-        }).to.throw(`The passed field '' must be valid for entity '${entity.name}'.\nErrors: No field`);
-        expect(() => {
+          fail();
+        } catch (error) {
+          expect(error.name).to.eq('InvalidObjectException');
+          expect(
+            error.message
+          ).to.eq(`The passed field '' must be valid for entity '${entity.name}'.\nErrors: No field`);
+        }
+        try {
           entity.addField({ name: 'myField' });
-        }).to.throw(`The passed field 'myField' must be valid for entity '${entity.name}'.\nErrors: No field type`);
+          fail();
+        } catch (error) {
+          expect(error.name).to.eq('InvalidObjectException');
+          expect(
+            error.message
+          ).to.eq(`The passed field 'myField' must be valid for entity '${entity.name}'.\nErrors: No field type`);
+        }
       });
     });
-    context('when adding a valid field', () => {
-      let validField = null;
-
-      before(() => {
-        validField = new JDLField({ name: 'myField', type: 'String' });
-      });
-
+    describe('when adding a valid field', () => {
       it('works', () => {
+        const entity = new JDLEntity({
+          name: 'Abc',
+          tableName: 'String'
+        });
+        const validField = new JDLField({ name: 'myField', type: 'String' });
         entity.addField(validField);
         expect(entity.fields).to.deep.eq({ myField: validField });
       });
     });
   });
   describe('#toString', () => {
-    context('without a comment', () => {
-      let entity = null;
-      let args = null;
-
-      before(() => {
-        args = {
+    describe('without a comment', () => {
+      it('stringifies its content', () => {
+        const args = {
           name: 'Abc',
           tableName: 'String'
         };
-        entity = new JDLEntity(args);
-      });
-
-      it('stringifies its content', () => {
+        const entity = new JDLEntity(args);
         expect(entity.toString()).to.eq(`entity ${args.name} (${args.tableName})`);
       });
     });
-    context('without fields', () => {
-      let entity = null;
-      let args = null;
-
-      before(() => {
-        args = {
+    describe('without fields', () => {
+      it('stringifies its content', () => {
+        const args = {
           name: 'Abc',
           tableName: 'String',
           comment: 'comment'
         };
-        entity = new JDLEntity(args);
-      });
-
-      it('stringifies its content', () => {
+        const entity = new JDLEntity(args);
         expect(entity.toString()).to.eq(
           `/**
  * ${args.comment}
@@ -202,30 +203,23 @@ entity ${args.name} (${args.tableName})`
         );
       });
     });
-    context('with fields', () => {
-      let entity = null;
-      let field1 = null;
-      let field2 = null;
-
-      before(() => {
-        entity = new JDLEntity({
+    describe('with fields', () => {
+      it('stringifies its content', () => {
+        const entity = new JDLEntity({
           name: 'Abc',
           tableName: 'String',
           comment: 'Entity comment'
         });
-        field1 = new JDLField({
+        const field1 = new JDLField({
           name: 'myField',
           type: 'Integer',
           comment: 'Field comment',
           validations: [new JDLValidation()]
         });
-        field2 = new JDLField({
+        const field2 = new JDLField({
           name: 'myOtherField',
           type: 'Long'
         });
-      });
-
-      it('stringifies its content', () => {
         entity.addField(field1);
         entity.addField(field2);
         expect(entity.toString()).to.eq(

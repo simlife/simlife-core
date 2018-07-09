@@ -22,251 +22,285 @@ const expect = require('chai').expect;
 const Set = require('../../../../lib/utils/objects/set');
 
 describe('Set', () => {
-  let set;
-
-  beforeEach(() => {
-    set = new Set();
-  });
-
   describe('::new', () => {
-    context('with no arg', () => {
+    describe('with no arg', () => {
       it('creates a new Set', () => {
         new Set(); // eslint-disable-line
       });
     });
-    context('with an array', () => {
-      let set = null;
-
-      before(() => {
-        set = new Set([1, 2, 3, 4]);
-      });
-
+    describe('with an array', () => {
       it('creates a Set with the array\'s elements', () => {
+        const set = new Set([1, 2, 3, 4]);
         expect(set.size()).to.eq(4);
       });
     });
   });
   describe('#add', () => {
-    context('when trying to add a nil element', () => {
+    describe('when trying to add a nil element', () => {
       it('fails', () => {
-        expect(() => {
-          set.add(null);
-        }).to.throw('Can\'t add a nil element to the set.');
+        const mySet = new Set();
+        try {
+          mySet.add(null);
+        } catch (error) {
+          expect(error.name).to.eq('NullPointerException');
+        }
       });
     });
-    context('when trying to add a new element', () => {
+    describe('when trying to add a new element', () => {
       it('returns true', () => {
-        const result = set.add('Abc');
+        const mySet = new Set();
+        const result = mySet.add('Abc');
         expect(result).to.be.true;
-        expect(set.size()).to.eq(1);
+        expect(mySet.size()).to.eq(1);
       });
     });
-    context('when trying to add an existing element', () => {
+    describe('when trying to add an existing element', () => {
       it('returns false', () => {
-        set.add('Abc');
-        const result = set.add('Abc');
+        const mySet = new Set();
+        mySet.add('Abc');
+        const result = mySet.add('Abc');
         expect(result).to.be.false;
-        expect(set.size()).to.eq(1);
+        expect(mySet.size()).to.eq(1);
       });
     });
   });
   describe('#addArrayElements', () => {
-    context('when trying to add elements from a nil array', () => {
+    describe('when trying to add elements from a nil array', () => {
       it('fails', () => {
-        expect(() => {
-          set.addArrayElements(null);
-        }).to.throw('Can\'t add elements from a nil object.');
+        const mySet = new Set();
+        try {
+          mySet.addArrayElements(null);
+        } catch (error) {
+          expect(error.name).to.eq('NullPointerException');
+        }
       });
     });
-    context('when trying to add an array\'s elements', () => {
-      context('but every element already exists in the Set', () => {
+    describe('when trying to add an array\'s elements', () => {
+      describe('but every element already exists in the Set', () => {
         it('returns false', () => {
-          set.addArrayElements([1, 2, 3, 4, 5, 6]);
-          const result = set.addArrayElements([1, 2, 3, 4, 5, 6]);
+          const mySet = new Set();
+          mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+          const result = mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
           expect(result).to.be.false;
-          expect(set.size()).to.eq(6);
+          expect(mySet.size()).to.eq(6);
         });
       });
-      context('and at least one element is not already in the Set', () => {
+      describe('and at least one element is not already in the Set', () => {
         it('returns true', () => {
-          set.addArrayElements([1, 2, 3, 4, 5, 6]);
-          const result = set.addArrayElements([1, 2, 3, 4, 5, 6, 7]);
+          const mySet = new Set();
+          mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+          const result = mySet.addArrayElements([1, 2, 3, 4, 5, 6, 7]);
           expect(result).to.be.true;
-          expect(set.size()).to.eq(7);
+          expect(mySet.size()).to.eq(7);
         });
       });
     });
   });
   describe('#addSetElements', () => {
-    context('when passing a nil Set', () => {
+    describe('when passing a nil Set', () => {
       it('fails', () => {
-        expect(() => {
-          set.addSetElements(null);
-        }).to.throw('Can\'t add elements from a nil object.');
+        const mySet = new Set();
+        try {
+          mySet.addSetElements(null);
+        } catch (error) {
+          expect(error.name).to.eq('NullPointerException');
+        }
       });
     });
-    context('when passing an empty Set', () => {
+    describe('when passing an empty Set', () => {
       it('doesn\'t change the Set and returns false', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
-        const otherSet = new Set();
-        const result = set.addSetElements(otherSet);
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        const myOtherSet = new Set();
+        const result = mySet.addSetElements(myOtherSet);
         expect(result).to.be.false;
-        expect(set.size()).to.eq(6);
+        expect(mySet.size()).to.eq(6);
       });
     });
-    context('when passing a Set containing already present elements', () => {
+    describe('when passing a Set containing already present elements', () => {
       it('doesn\'t change the Set and returns false', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
-        const otherSet = new Set();
-        otherSet.addArrayElements([1, 2, 3, 4, 5, 6]);
-        const result = set.addSetElements(otherSet);
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        const myOtherSet = new Set();
+        myOtherSet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        const result = mySet.addSetElements(myOtherSet);
         expect(result).to.be.false;
-        expect(set.size()).to.eq(6);
+        expect(mySet.size()).to.eq(6);
       });
     });
-    context('when passing a Set having at least one new element', () => {
+    describe('when passing a Set having at least one new element', () => {
       it('changes the Set and returns true', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
-        const otherSet = new Set();
-        otherSet.addArrayElements([1, 2, 3, 4, 5, 7]);
-        const result = set.addSetElements(otherSet);
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        const myOtherSet = new Set();
+        myOtherSet.addArrayElements([1, 2, 3, 4, 5, 7]);
+        const result = mySet.addSetElements(myOtherSet);
         expect(result).to.be.true;
-        expect(set.size()).to.eq(7);
+        expect(mySet.size()).to.eq(7);
       });
     });
   });
   describe('#remove', () => {
-    context('when asking to remove a nil element', () => {
+    describe('when asking to remove a nil element', () => {
       it('returns false', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
-        const result = set.remove(null);
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        const result = mySet.remove(null);
         expect(result).to.be.false;
-        expect(set.size()).to.eq(6);
+        expect(mySet.size()).to.eq(6);
       });
     });
-    context('when asking to remove an element that is not present', () => {
+    describe('when asking to remove an element that is not present', () => {
       it('returns false', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
-        const result = set.remove(42);
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        const result = mySet.remove(42);
         expect(result).to.be.false;
-        expect(set.size()).to.eq(6);
+        expect(mySet.size()).to.eq(6);
       });
     });
-    context('when asking to remove a present element', () => {
+    describe('when asking to remove a present element', () => {
       it('returns true', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
-        const result = set.remove(3);
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        const result = mySet.remove(3);
         expect(result).to.be.true;
-        expect(set.size()).to.eq(5);
+        expect(mySet.size()).to.eq(5);
       });
     });
   });
   describe('#forEach', () => {
-    context('when passing a nil function', () => {
+    describe('when passing a nil function', () => {
       it('fails', () => {
-        expect(() => {
-          set.forEach(null);
-        }).to.throw('The function must not be nil.');
+        const mySet = new Set();
+        try {
+          mySet.forEach(null);
+        } catch (error) {
+          expect(error.name).to.eq('NullPointerException');
+        }
       });
     });
-    context('when passing a valid function', () => {
+    describe('when passing a valid function', () => {
       it('executes it for each element', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
         const array = [];
-        set.forEach(element => array.push(element));
+        mySet.forEach((element) => {
+          array.push(element);
+        });
         expect(array.length).to.eq(6);
       });
     });
   });
   describe('#filter', () => {
-    context('when passing a nil function', () => {
+    describe('when passing a nil function', () => {
       it('fails', () => {
-        expect(() => {
-          set.filter(null);
-        }).to.throw('The function must not be nil.');
+        const mySet = new Set();
+        try {
+          mySet.filter(null);
+        } catch (error) {
+          expect(error.name).to.eq('NullPointerException');
+        }
       });
     });
-    context('when passing a valid function', () => {
+    describe('when passing a valid function', () => {
       it('executes it for each element and returns the new Set', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
-        const newSet = set.filter(element => element > 3);
-        expect(newSet).not.to.be.null;
-        newSet.forEach(element => expect(element > 3).to.be.true);
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        const myNewSet = mySet.filter(element => element > 3);
+        expect(myNewSet).not.to.be.null;
+        myNewSet.forEach((element) => {
+          expect(element > 3).to.be.true;
+        });
       });
     });
   });
   describe('#map', () => {
-    context('when passing a nil function', () => {
+    describe('when passing a nil function', () => {
       it('fails', () => {
-        expect(() => {
-          set.map(null);
-        }).to.throw('The function must not be nil.');
+        const mySet = new Set();
+        try {
+          mySet.map(null);
+        } catch (error) {
+          expect(error.name).to.eq('NullPointerException');
+        }
       });
     });
-    context('when passing a valid function', () => {
+    describe('when passing a valid function', () => {
       it('executes it for each element and returns the new Set', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
-        const newSet = set.map(element => element * 7);
-        expect(newSet).not.to.be.null;
-        expect(newSet.size()).to.eq(6);
-        newSet.forEach(element => expect(element >= 7).to.be.true);
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        const myNewSet = mySet.map(element => element * 7);
+        expect(myNewSet).not.to.be.null;
+        expect(myNewSet.size()).to.eq(6);
+        myNewSet.forEach((element) => {
+          expect(element >= 7).to.be.true;
+        });
       });
     });
   });
   describe('#has', () => {
-    context('when passing a nil object', () => {
+    describe('when passing a nil object', () => {
       it('returns false', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
-        expect(set.has(null)).to.be.false;
-        expect(set.has()).to.be.false;
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        expect(mySet.has(null)).to.be.false;
+        expect(mySet.has(undefined)).to.be.false;
       });
     });
-    context('when passing an object that is not present', () => {
+    describe('when passing an object that is not present', () => {
       it('returns false', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
-        expect(set.has(42)).to.be.false;
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        expect(mySet.has(42)).to.be.false;
       });
     });
-    context('when passing a present object', () => {
+    describe('when passing a present object', () => {
       it('returns true', () => {
-        set.addArrayElements([1, 2, 3, 4, 5, 6]);
-        expect(set.has(4)).to.be.true;
+        const mySet = new Set();
+        mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+        expect(mySet.has(4)).to.be.true;
       });
     });
   });
   describe('#clear', () => {
     it('clears the Set', () => {
-      set.addArrayElements([1, 2, 3, 4, 5, 6]);
-      set.clear();
-      expect(set.size()).to.eq(0);
+      const mySet = new Set();
+      mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+      mySet.clear();
+      expect(mySet.size()).to.eq(0);
     });
   });
   describe('#size', () => {
     it('returns the size of the Set', () => {
-      set.addArrayElements([1, 2, 3, 4, 5, 6]);
-      expect(set.size()).to.eq(6);
+      const mySet = new Set();
+      mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+      expect(mySet.size()).to.eq(6);
     });
   });
   describe('#join', () => {
-    context('when not passing a delimiter', () => {
+    describe('when not passing a delimiter', () => {
       it('uses the comma', () => {
+        const mySet = new Set();
         const array = [1, 2, 3, 4, 5, 6];
-        set.addArrayElements(array);
-        expect(set.join()).to.eq(array.join(','));
+        mySet.addArrayElements(array);
+        expect(mySet.join()).to.eq(array.join(','));
       });
     });
-    context('when passing a delimiter', () => {
+    describe('when passing a delimiter', () => {
       it('uses it', () => {
+        const mySet = new Set();
         const array = [1, 2, 3, 4, 5, 6];
-        set.addArrayElements(array);
-        expect(set.join('& ')).to.eq(array.join('& '));
+        mySet.addArrayElements(array);
+        expect(mySet.join('& ')).to.eq(array.join('& '));
       });
     });
   });
   describe('#toString', () => {
     it('returns the stringified form of the Set', () => {
-      set.addArrayElements([1, 2, 3, 4, 5, 6]);
-      expect(set.toString()).to.eq('[1,2,3,4,5,6]');
+      const mySet = new Set();
+      mySet.addArrayElements([1, 2, 3, 4, 5, 6]);
+      expect(mySet.toString()).to.eq('[1,2,3,4,5,6]');
     });
   });
 });

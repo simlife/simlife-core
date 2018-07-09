@@ -39,14 +39,7 @@
     }
   }
 
-  function addToApplicationDecl(passedApplicationDecl, key, value) {
-    let applicationDecl = passedApplicationDecl || {};
-    applicationDecl[key] = value;
-    return applicationDecl;
-  }
-
   const parsed = {
-    applications: [],
     constants: {},
     entities: [],
     relationships: [],
@@ -60,23 +53,15 @@
     noServer: { list: [], excluded: [] },
     filter: { list: [], excluded: [] },
     angularSuffix: {},
-    noFluentMethod: { list: [], excluded: [] },
-    clientRootFolder: {}
+    noFluentMethod: { list: [], excluded: [] }
   };
 }
 
-start = p:prog {
-    p.applications.reverse();
-    return p;
-  }
+start = p:prog { return p; }
 
 prog
   = SPACE* constantDecl:constantDecl SPACE* p:prog {
     parsed.constants[constantDecl.name] = constantDecl.value;
-    return parsed;
-  }
-  / SPACE* applicationDeclaration:applicationDecl SPACE* p:prog {
-    parsed.applications.push(applicationDeclaration);
     return parsed;
   }
   / SPACE* ed:entityDecl SPACE* p:prog {
@@ -132,165 +117,7 @@ prog
     parsed.filter = filter;
     return parsed;
   }
-  / SPACE* clientRootFolder:clientRootFolderDecl SPACE* p:prog {
-    parsed.clientRootFolder = clientRootFolder;
-    return parsed;
-  }
   / '' { return parsed; }
-
-// Application Declaration
-applicationDecl
-  = APPLICATION SPACE* '{' SPACE* applicationSubDecl:applicationSubDecl SPACE* '}' {
-    return applicationSubDecl;
-  }
-
-applicationSubDecl
-  = SPACE* CONFIG SPACE* '{' SPACE* applicationConfigDecl:applicationConfigDecl? SPACE* '}' SPACE* applicationSubDecl:applicationSubDecl {
-    applicationSubDecl.config = applicationConfigDecl || {};
-    applicationSubDecl.entities = applicationSubDecl.entities || { entityList: [], excluded: [] };
-    return applicationSubDecl;
-  }
-  / SPACE* 'entities' SPACE* entityList:simpleEntityList SPACE* excluded:exclusion? SPACE* applicationSubDecl:applicationSubDecl {
-    applicationSubDecl.config = applicationSubDecl.config || {};
-    applicationSubDecl.entities = { entityList: entityList || [], excluded: excluded || [] };
-    return applicationSubDecl;
-  }
-  / '' { return { config: {}, entities: { entityList: [], excluded: [] } }; }
-
-applicationConfigDecl
-  = APPLICATION_TYPE SPACE* applicationType:[a-z]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'applicationType', applicationType.join(''));
-  }
-  / AUTHENTICATION_TYPE SPACE* authenticationType:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'authenticationType', authenticationType.join(''));
-  }
-  / BASE_NAME SPACE* baseName:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'baseName', baseName.join(''));
-  }
-  / BUILD_TOOL SPACE* buildTool:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'buildTool', buildTool.join(''));
-  }
-  / CACHE_PROVIDER SPACE* cacheProvider:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'cacheProvider', cacheProvider.join(''));
-  }
-  / CLIENT_FRAMEWORK SPACE* clientFramework:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'clientFramework', clientFramework.join(''));
-  }
-  / CLIENT_PACKAGE_MANAGER SPACE* clientPackageManager:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'clientPackageManager', clientPackageManager.join(''));
-  }
-  / DATABASE_TYPE SPACE* databaseType:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'databaseType', databaseType.join(''));
-  }
-  / DEV_DATABASE_TYPE SPACE* devDatabaseType:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'devDatabaseType', devDatabaseType.join(''));
-  }
-  / ENABLE_HIBERNATE_CACHE SPACE* enableHibernateCache:booleanChoice SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'enableHibernateCache', enableHibernateCache);
-  }
-  / ENABLE_SWAGGER_CODEGEN SPACE* enableSwaggerCodegen:booleanChoice SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'enableSwaggerCodegen', enableSwaggerCodegen);
-  }
-  / ENABLE_TRANSLATION SPACE* enableTranslation:booleanChoice SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'enableTranslation', enableTranslation);
-  }
-  / SIM_PREFIX SPACE* simPrefixStart:[A-Za-z] simPrefixEnd:[A-Za-z0-9_-]* SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'simPrefix', `${simPrefixStart}${simPrefixEnd.join('')}`);
-  }
-  / SIMLIFE_VERSION SPACE* simlifeVersionMajor:[0-9]+ '.' simlifeVersionMinor:[0-9]+ '.' simlifeVersionPatch:[0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'simlifeVersion', `${simlifeVersionMajor.join('')}.${simlifeVersionMinor.join('')}.${simlifeVersionPatch.join('')}`);
-  }
-  / LANGUAGES SPACE* '['? languages:[a-z, ]+ ']'? SPACE* applicationConfigDecl:applicationConfigDecl {
-    const languageEntries = [];
-    const results = languages.join('').split(',');
-    for (let i = 0; i < results.length; i++) {
-      if (results[i].trim().length !== 0) {
-        languageEntries.push(results[i].trim());
-      }
-    }
-    return addToApplicationDecl(applicationConfigDecl, 'languages', languageEntries);
-  }
-  / MESSAGE_BROKER SPACE* messageBroker:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    const broker = messageBroker.join('');
-    if (broker === 'false') {
-      return addToApplicationDecl(applicationConfigDecl, 'messageBroker', false);
-    }
-    return addToApplicationDecl(applicationConfigDecl, 'messageBroker', broker);
-  }
-  / NATIVE_LANGUAGE SPACE* nativeLanguage:[a-z]+ applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'nativeLanguage', nativeLanguage.join(''));
-  }
-  / PACKAGE_NAME SPACE* packageName:(([a-z]+'.')*[a-z]+) SPACE* applicationConfigDecl:applicationConfigDecl {
-    applicationConfigDecl = addToApplicationDecl(
-      applicationConfigDecl,
-      'packageName',
-      packageName.join('').replace(/,/g, '')
-    );
-    return addToApplicationDecl(
-      applicationConfigDecl,
-      'packageFolder',
-      applicationConfigDecl.packageName.replace(/[.]/g, '/')
-    );
-  }
-  / PROD_DATABASE_TYPE SPACE* prodDatabaseType:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'prodDatabaseType', prodDatabaseType.join(''));
-  }
-  / SEARCH_ENGINE SPACE* searchEngine:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    const engine = searchEngine.join('');
-    if (engine === 'false') {
-      return addToApplicationDecl(applicationConfigDecl, 'searchEngine', false);
-    }
-    return addToApplicationDecl(applicationConfigDecl, 'searchEngine', engine);
-  }
-  / SERVER_PORT SPACE* serverPort:[0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'serverPort', serverPort.join(''), 10);
-  }
-  / SERVICE_DISCOVERY_TYPE SPACE* serviceDiscoveryType:[A-Za-z0-9]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    const choice = serviceDiscoveryType.join('');
-    if (choice === 'false') {
-      return addToApplicationDecl(applicationConfigDecl, 'serviceDiscoveryType', false);
-    }
-    return addToApplicationDecl(applicationConfigDecl, 'serviceDiscoveryType', choice);
-  }
-  / SKIP_CLIENT SPACE* skipClient:booleanChoice SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'skipClient', skipClient);
-  }
-  / SKIP_SERVER SPACE* skipServer:booleanChoice SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'skipServer', skipServer);
-  }
-  / SKIP_USER_MANAGEMENT SPACE* skipUserManagement:booleanChoice SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'skipUserManagement', skipUserManagement);
-  }
-  / TEST_FRAMEWORKS SPACE* '['? testFrameworks:[A-Za-z0-9, ]+ ']'? SPACE* applicationConfigDecl:applicationConfigDecl {
-    const testFrameworkEntries = [];
-    const results = testFrameworks.join('').split(',');
-    for (let i = 0; i < results.length; i++) {
-      if (results[i].trim().length !== 0) {
-        testFrameworkEntries.push(results[i].trim());
-      }
-    }
-    return addToApplicationDecl(applicationConfigDecl, 'testFrameworks', testFrameworkEntries);
-  }
-  / UAA_BASE_NAME SPACE* '"' uaaBaseName:([^\n,"]+) '"' SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'uaaBaseName', uaaBaseName.join(''));
-  }
-  / USE_SASS SPACE* useSass:booleanChoice SPACE* applicationConfigDecl:applicationConfigDecl {
-    return addToApplicationDecl(applicationConfigDecl, 'useSass', useSass);
-  }
-  / WEBSOCKET SPACE* websocket:[A-Za-z0-9-]+ SPACE* applicationConfigDecl:applicationConfigDecl {
-    const socket = websocket.join('');
-    if (socket === 'false') {
-      return addToApplicationDecl(applicationConfigDecl, 'websocket', false);
-    }
-    return addToApplicationDecl(applicationConfigDecl, 'websocket', socket);
-  }
-  / comment SPACE* applicationConfigDecl:applicationConfigDecl { return applicationConfigDecl; }
-  / ',' SPACE* applicationConfigDecl:applicationConfigDecl { return applicationConfigDecl; }
-  / ''
-
-booleanChoice
-  = TRUE { return true; }
-  / FALSE { return false; }
 
 constantDecl
   = name:CONSTANT_NAME SPACE* '=' SPACE* value:INTEGER { return { name: name, value: value }; }
@@ -303,7 +130,7 @@ entityDecl
   / ENTITY SPACE* e:ENTITY_NAME SPACE* eb:entityBody? { return { name: e, body: eb, javadoc: '' }; }
 
 entityTableNameDecl
-  = '(' SPACE* start:[A-Za-z] end:[A-Za-z0-9_-]* SPACE* ')' { return `${start}${end.join('')}`; }
+  = '(' SPACE* name:[A-z0-9_-]+ SPACE* ')' { return name.join(''); }
 
 entityBody
   = '{' SPACE* fdl:fieldDeclList SPACE* '}' { return fdl; }
@@ -364,7 +191,7 @@ exclusionSub
 
 // noFluentMethod
 noFluentMethod
-  = NO_FLUENT_METHOD SPACE+ decl:subNoFluentMethod SPACE* ex:exclusion? SPACE* {
+  = NO_FLUENT_METHOD SPACE+ decl:subNoFluentMethod SPACE* ex:exclusion? SPACE*  {
     addUniqueElements(parsed.noFluentMethod.list, decl);
     if (ex) {
       addUniqueElements(parsed.noFluentMethod.excluded, ex);
@@ -380,7 +207,7 @@ subNoFluentMethod
 
 // DTO
 dtoDecl
-  = DTO SPACE+ decl:entityList SPACE* ex:exclusion? SPACE* {
+  = DTO SPACE+ decl:entityList SPACE* ex:exclusion? SPACE*  {
     parsed.dto[decl[decl.length - 1]] = parsed.dto[decl[decl.length - 1]] || { list: [], excluded: [] };
     addUniqueElements(parsed.dto[decl[decl.length - 1]].list, decl.slice(0, decl.length - 1));
     if (ex) {
@@ -391,7 +218,7 @@ dtoDecl
 
 // Pagination
 pagiDecl
-  = PAGINATE SPACE+ decl:entityList SPACE* ex:exclusion? SPACE* {
+  = PAGINATE SPACE+ decl:entityList SPACE* ex:exclusion? SPACE*  {
   	parsed.pagination[decl[decl.length - 1]] =
       parsed.pagination[decl[decl.length - 1]] || { list: [], excluded: [] };
     addUniqueElements(parsed.pagination[decl[decl.length - 1]].list, decl.slice(0, decl.length - 1));
@@ -403,7 +230,7 @@ pagiDecl
 
 // Service
 serviceDecl
-  = SERVICE SPACE+ decl:entityList SPACE* ex:exclusion? SPACE* {
+  = SERVICE SPACE+ decl:entityList SPACE* ex:exclusion? SPACE*  {
   	parsed.service[decl[decl.length - 1]] =
       parsed.service[decl[decl.length - 1]] || { list: [], excluded: [] };
     addUniqueElements(parsed.service[decl[decl.length - 1]].list, decl.slice(0, decl.length - 1));
@@ -415,7 +242,7 @@ serviceDecl
 
 // first way of declaring microservices
 microserviceDecl1
-  = MICROSERVICE SPACE+ decl:entityList SPACE* ex:exclusion? SPACE* {
+  = MICROSERVICE SPACE+ decl:entityList SPACE* ex:exclusion? SPACE*  {
     parsed.microservice[decl[decl.length - 1]] =
       parsed.microservice[decl[decl.length - 1]] || { list: [], excluded: [] };
     addUniqueElements(parsed.microservice[decl[decl.length - 1]].list, decl.slice(0, decl.length - 1));
@@ -427,7 +254,7 @@ microserviceDecl1
 
 // searchEngine
 searchEngineDecl
-  = SEARCH SPACE+ decl:entityList SPACE* ex:exclusion? SPACE* {
+  = SEARCH SPACE+ decl:entityList SPACE* ex:exclusion? SPACE*  {
     parsed.searchEngine[decl[decl.length - 1]] =
       parsed.searchEngine[decl[decl.length - 1]] || { list: [], excluded: [] };
     addUniqueElements(parsed.searchEngine[decl[decl.length - 1]].list, decl.slice(0, decl.length - 1));
@@ -439,7 +266,7 @@ searchEngineDecl
 
 // skipClient option
 noClientDecl
-  = SKIP_CLIENT SPACE+ decl:subNoClientDecl SPACE* ex:exclusion? SPACE* {
+  = SKIP_CLIENT SPACE+ decl:subNoClientDecl SPACE* ex:exclusion? SPACE*  {
     addUniqueElements(parsed.noClient.list, decl);
     if (ex) {
       addUniqueElements(parsed.noClient.excluded, ex);
@@ -456,7 +283,7 @@ subNoClientDecl
 
 // skipServer option
 noServerDecl
-  = SKIP_SERVER SPACE+ decl:subNoServerDecl SPACE* ex:exclusion? SPACE* {
+  = SKIP_SERVER SPACE+ decl:subNoServerDecl SPACE* ex:exclusion? SPACE*  {
     addUniqueElements(parsed.noServer.list, decl);
     if (ex) {
       addUniqueElements(parsed.noServer.excluded, ex);
@@ -472,7 +299,7 @@ subNoServerDecl
 
 // JPA Metamodel filter option
 filterDecl
-  = FILTER SPACE decl:subFilterDecl SPACE* ex:exclusion? SPACE* {
+  = FILTER SPACE decl:subFilterDecl SPACE* ex:exclusion? SPACE*  {
     addUniqueElements(parsed.filter.list, decl);
     if (ex) {
       addUniqueElements(parsed.filter.excluded, ex);
@@ -489,7 +316,7 @@ subFilterDecl
 
 // angularSuffix option
 angularSuffixDecl
-  = ANGULAR_SUFFIX SPACE* decl:entityList SPACE* ex:exclusion? SPACE* {
+  = ANGULAR_SUFFIX SPACE* decl:entityList SPACE* ex:exclusion? SPACE*  {
     parsed.angularSuffix[decl[decl.length - 1]] =
       parsed.angularSuffix[decl[decl.length - 1]] || { list: [], excluded: [] };
     addUniqueElements(parsed.angularSuffix[decl[decl.length - 1]].list, decl.slice(0, decl.length - 1));
@@ -499,34 +326,13 @@ angularSuffixDecl
     return parsed.angularSuffix;
   }
 
-
-// clientRootFolder option
-clientRootFolderDecl
-  = CLIENT_ROOT_FOLDER SPACE* decl:entityList SPACE* ex:exclusion? SPACE* {
-    parsed.clientRootFolder[decl[decl.length - 1]] =
-      parsed.clientRootFolder[decl[decl.length - 1]] || { list: [], excluded: [] };
-    addUniqueElements(parsed.clientRootFolder[decl[decl.length - 1]].list, decl.slice(0, decl.length - 1));
-    if (ex) {
-      addUniqueElements(parsed.clientRootFolder[decl[decl.length - 1]].excluded, ex);
-    }
-    return parsed.clientRootFolder;
-  }
-
 // common way to declare an entity list
 entityList
   = e:ENTITY_NAME SPACE* ',' SPACE* sub:entityList { return addUniqueElements([e], sub); }
-  / STAR SPACE* WITH SPACE* method:methodDecl { return ['*', method.toString().replace(/,/g,'')]; }
-  / ALL SPACE* WITH SPACE* method:methodDecl { return ['*', method.toString().replace(/,/g,'')]; }
-  / e:ENTITY_NAME SPACE* WITH SPACE* method:([A-Za-z][A-Za-z0-9-]*) { return [e, method.toString().replace(/,/g,'')]; }
+  / STAR SPACE* WITH SPACE* method:([A-z0-9-]+) { return ['*', method.toString().replace(/,/g,'')]; }
+  / ALL SPACE* WITH SPACE* method:([A-z0-9-]+) { return ['*', method.toString().replace(/,/g,'')]; }
+  / e:ENTITY_NAME SPACE* WITH SPACE* method:([A-z0-9-]+) { return [e, method.toString().replace(/,/g,'')]; }
 
-methodDecl
-  = methodStart:[A-Za-z] methodEnd:[A-Za-z0-9-]* { return `${methodStart}${methodEnd.join('')}`; }
-
-simpleEntityList
-  = e:ENTITY_NAME SPACE* ',' SPACE* sub:simpleEntityList { return addUniqueElements([e], sub); }
-  / STAR SPACE* { return ['*']; }
-  / ALL SPACE* { return ['*']; }
-  / e:ENTITY_NAME SPACE* { return [e]; }
 
 relationshipType
 = ONE_TO_ONE { return 'one-to-one'; }
@@ -534,7 +340,7 @@ relationshipType
 / MANY_TO_ONE { return 'many-to-one'; }
 / MANY_TO_MANY { return 'many-to-many'; }
 
-type = head:[A-Z]tail:[A-Za-z0-9]* { return `${head}${tail.join('')}`; }
+type = head:[A-Z]tail:[A-z0-9]* { return `${head}${tail.join('')}`; }
 
 validation
   = REQUIRED { return { key: 'required', value: '' }; }
@@ -560,42 +366,6 @@ commentStop = [*]+ '/'
 notAComment = !commentStop !commentStart char:. { return char; }
 
 // Constants
-// Application constants
-APPLICATION = 'application'
-CONFIG = 'config'
-BASE_NAME = 'baseName'
-PACKAGE_NAME = 'packageName'
-CACHE_PROVIDER = 'cacheProvider'
-AUTHENTICATION_TYPE = 'authenticationType'
-ENABLE_HIBERNATE_CACHE = 'enableHibernateCache'
-ENABLE_SWAGGER_CODEGEN = 'enableSwaggerCodegen'
-SIMLIFE_VERSION = 'simlifeVersion'
-WEBSOCKET = 'websocket'
-DATABASE_TYPE = 'databaseType'
-DEV_DATABASE_TYPE = 'devDatabaseType'
-PROD_DATABASE_TYPE = 'prodDatabaseType'
-BUILD_TOOL = 'buildTool'
-SEARCH_ENGINE = 'searchEngine'
-ENABLE_TRANSLATION = 'enableTranslation'
-APPLICATION_TYPE = 'applicationType'
-TEST_FRAMEWORKS = 'testFrameworks'
-LANGUAGES = 'languages'
-SERVER_PORT = 'serverPort'
-USE_SASS = 'useSass'
-SIM_PREFIX = 'simPrefix'
-MESSAGE_BROKER = 'messageBroker'
-SERVICE_DISCOVERY_TYPE = 'serviceDiscoveryType'
-CLIENT_PACKAGE_MANAGER = 'clientPackageManager'
-CLIENT_FRAMEWORK = 'clientFramework'
-NATIVE_LANGUAGE = 'nativeLanguage'
-FRONT_END_BUILDER = 'frontendBuilder'
-SKIP_USER_MANAGEMENT = 'skipUserManagement'
-UAA_BASE_NAME = 'uaaBaseName'
-ENTITIES = 'entities'
-// skipClient & skipServer are already defined
-TRUE = 'true'
-FALSE = 'false'
-// Entity constants
 ENTITY = 'entity'
 RELATIONSHIP = 'relationship'
 ENUM = 'enum'
@@ -619,7 +389,6 @@ SKIP_CLIENT = 'skipClient'
 SKIP_SERVER = 'skipServer'
 ANGULAR_SUFFIX = 'angularSuffix'
 FILTER = 'filter'
-CLIENT_ROOT_FOLDER = 'clientRootFolder'
 // validations
 REQUIRED = 'required'
 MINLENGTH = 'minlength'
@@ -632,15 +401,15 @@ PATTERN = 'pattern'
 
 REGEX = pattern:[^\n\r/]* { return pattern.join(''); }
 
-ENUMNAME = head:[A-Z]tail:[A-Za-z0-9]* { return `${head}${tail.join('')}`; }
-ENUMPROP = head:[A-Za-z_]tail:[A-Za-z0-9_]* {
-    return `${head}${tail.join('')}`;
+ENUMNAME = head:[A-Z]tail:[A-z0-9]* { return `${head}${tail.join('')}`; }
+ENUMPROP = underscore:[_]*head:[A-Z0-9]tail:[A-Z0-9_]* {
+    return `${underscore.join('')}${head}${tail.join('')}`;
   }
 CONSTANT_NAME = name:[A-Z_]+ { return name.join(''); }
 INTEGER = negative:'-'?int:[0-9]+ { return parseInt(`${(negative ? negative : '') + int.join('')}`, 10); }
-INJECTED_FIELD_NAME = head:[a-zA-Z]tail:[A-Za-z0-9()]* { return `${head}${tail.join('')}`; }
-ENTITY_NAME = head:[A-Z]tail:[A-Za-z0-9]* { return `${head}${tail.join('')}`; }
-FIELD_NAME = head:[a-zA-Z]tail:[A-Za-z0-9]* { return `${head}${tail.join('')}`; }
-SPACE = [\n\t\r \u2028\u2029]
-SPACE_WITHOUT_NEWLINE = [\t \u2028\u2029]
+INJECTED_FIELD_NAME = head:[a-zA-Z]tail:[A-z0-9()]* { return `${head}${tail.join('')}`; }
+ENTITY_NAME = head:[A-Z]tail:[A-z0-9]* { return `${head}${tail.join('')}`; }
+FIELD_NAME = head:[a-zA-Z]tail:[A-z0-9]* { return `${head}${tail.join('')}`; }
+SPACE = ['\n'|'\t'|'\r'|' '|\u2028|\u2029]
+SPACE_WITHOUT_NEWLINE = ['\t'|' '|\u2028|\u2029]
 FORWARD_SLASH = [/]

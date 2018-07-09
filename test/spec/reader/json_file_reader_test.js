@@ -20,42 +20,57 @@
 /* eslint-disable no-new, no-unused-expressions */
 const expect = require('chai').expect;
 
-const JSONFileReader = require('../../../lib/reader/json_file_reader');
+const fail = expect.fail;
+const toFilePath = require('../../../lib/reader/json_file_reader').toFilePath;
+const doesfileExist = require('../../../lib/reader/json_file_reader').doesfileExist;
+const readEntityJSON = require('../../../lib/reader/json_file_reader').readEntityJSON;
 
 describe('JSONFileReader', () => {
   describe('::readEntityJSON', () => {
-    context('when passing an invalid argument', () => {
-      context('because it is nil', () => {
+    describe('when passing an invalid argument', () => {
+      describe('because it is nil', () => {
         it('fails', () => {
-          expect(() => {
-            JSONFileReader.readEntityJSON();
-          }).to.throw('The passed file path must not be nil.');
+          try {
+            readEntityJSON();
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('NullPointerException');
+          }
         });
       });
-      context('because it is empty', () => {
+      describe('because it is empty', () => {
         it('fails', () => {
-          expect(() => {
-            JSONFileReader.readEntityJSON('');
-          }).to.throw('The passed file path must not be nil.');
+          try {
+            readEntityJSON('');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('NullPointerException');
+          }
         });
       });
-      context('because the file does not exist', () => {
+      describe('because the file does not exist', () => {
         it('fails', () => {
-          expect(() => {
-            JSONFileReader.readEntityJSON('test/test_files/WrongFile.json');
-          }).to.throw('The passed file \'test/test_files/WrongFile.json\' must exist and must not be a directory.');
+          try {
+            readEntityJSON('test/test_files/WrongFile.json');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('FileNotFoundException');
+          }
         });
       });
-      context('because the file is a folder', () => {
+      describe('because the file is a folder', () => {
         it('fails', () => {
-          expect(() => {
-            JSONFileReader.readEntityJSON('test/test_files/');
-          }).to.throw('The passed file \'test/test_files/\' must exist and must not be a directory.');
+          try {
+            readEntityJSON('test/test_files/');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('FileNotFoundException');
+          }
         });
       });
     });
-    context('when passing a valid entity name', () => {
-      const content = JSONFileReader.readEntityJSON('test/test_files/MyEntity.json');
+    describe('when passing a valid entity name', () => {
+      const content = readEntityJSON('test/test_files/MyEntity.json');
       it('reads the file', () => {
         expect(content).to.deep.eq(
           {
@@ -77,34 +92,59 @@ describe('JSONFileReader', () => {
     });
   });
   describe('::toFilePath', () => {
-    context('when converting an entity name to a path', () => {
-      context('with a nil entity name', () => {
+    describe('when converting an entity name to a path', () => {
+      describe('with a nil entity name', () => {
         it('fails', () => {
-          expect(() => {
-            JSONFileReader.toFilePath();
-          }).to.throw('The passed entity name must not be nil.');
+          try {
+            toFilePath();
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('NullPointerException');
+          }
         });
       });
-      context('with an empty entity name', () => {
+      describe('with an empty entity name', () => {
         it('fails', () => {
-          expect(() => {
-            JSONFileReader.toFilePath('');
-          }).to.throw('The passed entity name must not be nil.');
+          try {
+            toFilePath('');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('NullPointerException');
+          }
         });
       });
-      context('with a valid entity name', () => {
+      describe('with a valid entity name', () => {
         it('returns the path', () => {
           const name = 'MyEntity';
-          expect(JSONFileReader.toFilePath(name)).to.eq(`.simlife/${name}.json`);
+          expect(toFilePath(name)).to.eq(`.simlife/${name}.json`);
         });
       });
-      context('with a valid entity name with the first letter lowercase', () => {
+      describe('with a valid entity name with the first letter lowercase', () => {
         it('returns the path, with the first letter upper-cased', () => {
           const expectedFirstLetter = 'M';
           const name = 'myEntity';
           expect(
-            JSONFileReader.toFilePath(name)
+            toFilePath(name)
           ).to.eq(`.simlife/${expectedFirstLetter}${name.slice(1, name.length)}.json`);
+        });
+      });
+    });
+  });
+  describe('::doesfileExist', () => {
+    describe('when checking a file path', () => {
+      describe('with a nil file path', () => {
+        it('return false', () => {
+          expect(doesfileExist()).to.be.false;
+        });
+      });
+      describe('with an invalid file path', () => {
+        it('return false', () => {
+          expect(doesfileExist('someInvalidPath')).to.be.false;
+        });
+      });
+      describe('with a valid file path', () => {
+        it('return true', () => {
+          expect(doesfileExist('./test/test_files/MyEntity.json')).to.be.true;
         });
       });
     });

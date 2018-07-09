@@ -17,27 +17,22 @@
  * limitations under the License.
  */
 
-/* eslint-disable no-new */
-/* eslint-disable no-unused-expressions */
-
+/* eslint-disable no-new, no-unused-expressions */
 const expect = require('chai').expect;
-const ApplicationTypes = require('../../../../lib/core/simlife/application_types');
+const BINARY_OPTIONS = require('../../../../lib/core/simlife/binary_options').BINARY_OPTIONS;
+const BINARY_OPTION_VALUE = require('../../../../lib/core/simlife/binary_options').BINARY_OPTION_VALUES;
+const exists = require('../../../../lib/core/simlife/binary_options').exists;
 
-describe('ApplicationTypes', () => {
+describe('BINARY_OPTIONS', () => {
   describe('::exists', () => {
-    context('when passing a nil arg', () => {
-      it('returns false', () => {
-        expect(ApplicationTypes.exists()).to.be.false;
-      });
-    });
-    context('when passing an invalid type', () => {
-      it('returns false', () => {
-        expect(ApplicationTypes.exists('NotAType')).to.be.false;
-      });
-    });
-    context('when passing a valid type', () => {
+    describe('when checking for a valid binary option', () => {
       it('returns true', () => {
-        expect(ApplicationTypes.exists(ApplicationTypes.UAA)).to.be.true;
+        expect(exists(BINARY_OPTIONS.DTO, BINARY_OPTION_VALUE.dto.MAPSTRUCT)).to.be.true;
+      });
+    });
+    describe('when checking for an invalid binary option', () => {
+      it('returns false', () => {
+        expect(exists('NOTHING')).to.be.false;
       });
     });
   });

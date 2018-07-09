@@ -21,35 +21,62 @@
 /* eslint-disable no-new, no-unused-expressions */
 const expect = require('chai').expect;
 
-const StringUtils = require('../../../lib/utils/string_utils');
+const fail = expect.fail;
+const camelCase = require('../../../lib/utils/string_utils').camelCase;
+const isNilOrEmpty = require('../../../lib/utils/string_utils').isNilOrEmpty;
 
 describe('StringUtils', () => {
   describe('::camelCase', () => {
-    context('when passing a valid string', () => {
+    describe('when passing a valid string', () => {
       it('camel-cases it', () => {
-        expect(StringUtils.camelCase('e')).to.eq('e');
-        expect(StringUtils.camelCase('entity')).to.eq('entity');
-        expect(StringUtils.camelCase('Entity')).to.eq('entity');
-        expect(StringUtils.camelCase('EntityA')).to.eq('entityA');
-        expect(StringUtils.camelCase('EntityAN')).to.eq('entityAN');
-        expect(StringUtils.camelCase('Entity_AN')).to.eq('entityAN');
-        expect(StringUtils.camelCase('_entity_AN')).to.eq('entityAN');
-        expect(StringUtils.camelCase('_entit--y_AN---')).to.eq('entityAN');
-        expect(StringUtils.camelCase('En tity_AN ')).to.eq('entityAN');
+        expect(camelCase('e')).to.eq('e');
+        expect(camelCase('entity')).to.eq('entity');
+        expect(camelCase('Entity')).to.eq('entity');
+        expect(camelCase('EntityA')).to.eq('entityA');
+        expect(camelCase('EntityAN')).to.eq('entityAN');
+        expect(camelCase('Entity_AN')).to.eq('entityAN');
+        expect(camelCase('_entity_AN')).to.eq('entityAN');
+        expect(camelCase('_entit--y_AN---')).to.eq('entityAN');
+        expect(camelCase('En tity_AN ')).to.eq('entityAN');
       });
     });
-    context('when passing an invalid parameter', () => {
-      context('as it is nil', () => {
+    describe('when passing an invalid parameter', () => {
+      describe('as it is nil', () => {
         it('fails', () => {
-          expect(() => {
-            StringUtils.camelCase();
-          }).to.throw('The passed string cannot be nil.');
+          try {
+            camelCase();
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('NullPointerException');
+          }
         });
       });
-      context('as it is empty', () => {
+      describe('as it is empty', () => {
         it('returns it', () => {
-          expect(StringUtils.camelCase('')).to.eq('');
+          expect(camelCase('')).to.eq('');
         });
+      });
+    });
+  });
+  describe('::isNilOrEmpty', () => {
+    describe('when passing a nil object', () => {
+      it('returns true', () => {
+        expect(isNilOrEmpty(null)).to.be.true;
+      });
+    });
+    describe('when passing an undefined object', () => {
+      it('returns true', () => {
+        expect(isNilOrEmpty(undefined)).to.be.true;
+      });
+    });
+    describe('when passing an empty string', () => {
+      it('returns true', () => {
+        expect(isNilOrEmpty('')).to.be.true;
+      });
+    });
+    describe('when passing a valid string', () => {
+      it('returns false', () => {
+        expect(isNilOrEmpty('ABC')).to.be.false;
       });
     });
   });

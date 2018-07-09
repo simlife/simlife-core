@@ -19,21 +19,19 @@
 
 /* eslint-disable no-new, no-unused-expressions */
 const expect = require('chai').expect;
-const BinaryOptions = require('../../../../lib/core/simlife/binary_options');
+const UNARY_OPTIONS = require('../../../../lib/core/simlife/unary_options').UNARY_OPTIONS;
+const exists = require('../../../../lib/core/simlife/unary_options').exists;
 
-const Options = BinaryOptions.Options;
-const Values = BinaryOptions.Values;
-
-describe('BinaryOptions', () => {
+describe('UNARY_OPTIONS', () => {
   describe('::exists', () => {
-    context('when checking for a valid binary option', () => {
+    describe('when checking for a valid unary option', () => {
       it('returns true', () => {
-        expect(BinaryOptions.exists(Options.DTO, Values.dto.MAPSTRUCT)).to.be.true;
+        expect(exists(UNARY_OPTIONS.SKIP_CLIENT)).to.be.true;
       });
     });
-    context('when checking for an invalid binary option', () => {
+    describe('when checking for an invalid unary option', () => {
       it('returns false', () => {
-        expect(BinaryOptions.exists('NOTHING')).to.be.false;
+        expect(exists('NOTHING')).to.be.false;
       });
     });
   });

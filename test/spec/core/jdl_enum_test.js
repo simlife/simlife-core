@@ -21,60 +21,73 @@
 const expect = require('chai').expect;
 const JDLEnum = require('../../../lib/core/jdl_enum');
 
+const fail = expect.fail;
+
 describe('JDLEnum', () => {
   describe('::new', () => {
-    context('when not passing any argument', () => {
+    describe('when not passing any argument', () => {
       it('fails', () => {
-        expect(() => {
+        try {
           new JDLEnum();
-        }).to.throw('The enum\'s name must be passed.');
+          fail();
+        } catch (error) {
+          expect(error.name).to.eq('NullPointerException');
+        }
       });
     });
-    context('when not passing a name', () => {
+    describe('when not passing a name', () => {
       it('fails', () => {
-        expect(() => {
+        try {
           new JDLEnum({ values: ['ABC'], comment: 'My enumeration.' });
-        }).to.throw('The enum\'s name must be passed.');
+          fail();
+        } catch (error) {
+          expect(error.name).to.eq('NullPointerException');
+        }
       });
     });
-    context('when passing arguments', () => {
+    describe('when passing arguments', () => {
       it('uses them', () => {
         new JDLEnum({ name: 'MyEnum', values: ['ABC'] });
       });
     });
+    describe('when passing a reserved keyword as name', () => {
+      it('fails', () => {
+        try {
+          new JDLEnum({ name: 'class' });
+          fail();
+        } catch (error) {
+          expect(error.name).to.eq('IllegalNameException');
+        }
+      });
+    });
   });
   describe('#addValue', () => {
-    let jdlEnum = null;
-
-    before(() => {
-      jdlEnum = new JDLEnum({ name: 'MyEnum' });
-    });
-
-    context('when not passing a value', () => {
+    const jdlEnum = new JDLEnum({ name: 'MyEnum' });
+    describe('when not passing a value', () => {
       it('fails', () => {
-        expect(() => {
+        try {
           jdlEnum.addValue(null);
-        }).to.throw('A valid value must be passed, got nil.');
+          fail();
+        } catch (error) {
+          expect(error.name).to.eq('NullPointerException');
+        }
       });
     });
-    context('when passing a value', () => {
-      before(() => {
-        jdlEnum.addValue(42);
-      });
-
+    describe('when passing a value', () => {
       it('converts it to a string value', () => {
+        jdlEnum.addValue(42);
         expect(jdlEnum.values.toString()).to.deep.eq('[42]');
       });
     });
   });
   describe('::isValid', () => {
-    context('when validating an invalid object', () => {
-      context('with no name', () => {
+    describe('when validating an invalid object', () => {
+      describe('with no name', () => {
         it('returns false', () => {
           expect(JDLEnum.isValid({ values: ['A', 'B'] })).to.be.false;
         });
       });
-      context('with a reserved keyword as name', () => {
+      describe('with a reserved keyword as name', () => {
         it('returns false', () => {
           expect(
             JDLEnum.isValid({ name: 'class' })
@@ -84,19 +97,13 @@ describe('JDLEnum', () => {
     });
   });
   describe('#toString', () => {
-    let values = [];
-    let jdlEnum = null;
-
-    before(() => {
-      values = ['FRENCH', 'ENGLISH', 'ICELANDIC'];
-      jdlEnum = new JDLEnum({
+    it('stringifies the enum', () => {
+      const values = ['FRENCH', 'ENGLISH', 'ICELANDIC'];
+      const jdlEnum = new JDLEnum({
         name: 'Language',
         values,
         comment: 'The language enumeration.'
       });
-    });
-
-    it('stringifies the enum', () => {
       expect(jdlEnum.toString()).to.eq(
         `/**
  * ${jdlEnum.comment}

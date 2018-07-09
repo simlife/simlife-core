@@ -19,26 +19,19 @@
 
 /* eslint-disable no-new, no-unused-expressions */
 const expect = require('chai').expect;
-const Validations = require('../../../../lib/core/simlife/validations');
+const RELATIONSHIP_TYPES = require('../../../../lib/core/simlife/relationship_types').RELATIONSHIP_TYPES;
+const exists = require('../../../../lib/core/simlife/relationship_types').exists;
 
-describe('Validations', () => {
+describe('RELATIONSHIP_TYPES', () => {
   describe('::exists', () => {
-    describe('when checking for a valid validation', () => {
+    describe('when checking for a valid unary relationship type', () => {
       it('returns true', () => {
-        expect(Validations.exists(Validations.MAXBYTES)).to.be.true;
+        expect(exists(RELATIONSHIP_TYPES.MANY_TO_ONE)).to.be.true;
       });
     });
-    describe('when checking for an invalid validation', () => {
+    describe('when checking for an invalid relationship type', () => {
       it('returns false', () => {
-        expect(Validations.exists('NOTHING')).to.be.false;
-      });
-    });
-  });
-  describe('::needsValue', () => {
-    describe('when checking whether a validation needs a value', () => {
-      it('returns so', () => {
-        expect(Validations.needsValue(Validations.MAXLENGTH)).to.be.true;
-        expect(Validations.needsValue(Validations.REQUIRED)).to.be.false;
+        expect(exists('NOTHING')).to.be.false;
       });
     });
   });

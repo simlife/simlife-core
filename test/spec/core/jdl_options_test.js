@@ -20,50 +20,44 @@
 /* eslint-disable no-unused-expressions */
 const expect = require('chai').expect;
 
+const fail = expect.fail;
 const JDLOptions = require('../../../lib/core/jdl_options');
 const JDLUnaryOption = require('../../../lib/core/jdl_unary_option');
-const JDLBinaryOption = require('../../../lib/core/jdl_binary_option');
-const UnaryOptions = require('../../../lib/core/simlife/unary_options');
-const BinaryOptions = require('../../../lib/core/simlife/binary_options');
+const UNARY_OPTIONS = require('../../../lib/core/simlife/unary_options').UNARY_OPTIONS;
 
 describe('JDLOptions', () => {
   describe('#addOption', () => {
-    context('when passing an invalid option', () => {
-      let options = null;
-
-      before(() => {
-        options = new JDLOptions();
-      });
-
+    describe('when passing an invalid option', () => {
       it('fails', () => {
-        expect(() => {
+        const options = new JDLOptions();
+        try {
           options.addOption(null);
-        }).to.throw('The passed options are invalid.\nErrors: No option');
+          fail();
+        } catch (error) {
+          expect(error.name).to.equal('InvalidObjectException');
+        }
       });
     });
-    context('when passing a valid option', () => {
-      let options = null;
-      let option1 = null;
-      let option2 = null;
+    describe('when passing a valid option', () => {
+      const options = new JDLOptions();
+      const option1 = new JDLUnaryOption({ name: UNARY_OPTIONS.SKIP_CLIENT, entityNames: ['A', 'B', 'C'], excludedNames: ['M'] });
+      const option2 = new JDLUnaryOption({ name: UNARY_OPTIONS.SKIP_SERVER, entityNames: ['D'] });
 
       before(() => {
-        options = new JDLOptions();
-        option1 = new JDLUnaryOption({ name: UnaryOptions.SKIP_CLIENT, entityNames: ['A', 'B', 'C'], excludedNames: ['M'] });
-        option2 = new JDLUnaryOption({ name: UnaryOptions.SKIP_SERVER, entityNames: ['D'] });
         options.addOption(option1);
         options.addOption(option2);
       });
 
-      context('that has not been added before', () => {
+      describe('that has not been added before', () => {
         it('adds it', () => {
           expect(options.getOptions()[0]).to.deep.eq(option1);
           expect(options.getOptions()[1]).to.deep.eq(option2);
         });
       });
 
-      context('that has been added before', () => {
+      describe('that has been added before', () => {
         before(() => {
-          options.addOption(new JDLUnaryOption({ name: UnaryOptions.SKIP_CLIENT, entityNames: ['A', 'J'], excludedNames: ['N', 'O'] }));
+          options.addOption(new JDLUnaryOption({ name: UNARY_OPTIONS.SKIP_CLIENT, entityNames: ['A', 'J'], excludedNames: ['N', 'O'] }));
         });
 
         it('does not duplicate it', () => {
@@ -73,7 +67,7 @@ describe('JDLOptions', () => {
           expect(
             options.getOptions()[0]
           ).to.deep.eq(new JDLUnaryOption({
-            name: UnaryOptions.SKIP_CLIENT,
+            name: UNARY_OPTIONS.SKIP_CLIENT,
             entityNames: ['A', 'B', 'C', 'J'],
             excludedNames: ['M', 'N', 'O']
           }));
@@ -82,112 +76,38 @@ describe('JDLOptions', () => {
     });
   });
   describe('#has', () => {
-    context('with an invalid input', () => {
+    describe('with an invalid input', () => {
       it('returns false', () => {
         expect(new JDLOptions().has(null)).to.be.false;
       });
     });
-    context('with a valid input', () => {
-      let options = null;
-
-      before(() => {
-        options = new JDLOptions();
-      });
-
+    describe('with a valid input', () => {
       it('returns whether the option is present', () => {
+        const options = new JDLOptions();
         options.addOption(new JDLUnaryOption({
-          name: UnaryOptions.SKIP_CLIENT,
+          name: UNARY_OPTIONS.SKIP_CLIENT,
           entityNames: ['A']
         }));
-        expect(options.has(UnaryOptions.SKIP_CLIENT)).to.be.true;
-        expect(options.has(UnaryOptions.SKIP_SERVER)).to.be.false;
-      });
-    });
-  });
-  describe('#size', () => {
-    let options = null;
-
-    before(() => {
-      options = new JDLOptions();
-    });
-
-    it('returns the number of options', () => {
-      expect(options.size()).to.equal(0);
-      options.addOption(new JDLUnaryOption({
-        name: UnaryOptions.SKIP_CLIENT,
-        entityNames: ['A', 'B', 'C'],
-        excludedNames: ['M']
-      }));
-      expect(options.size()).to.equal(1);
-    });
-  });
-  describe('#getOptionsForName', () => {
-    let jdlOptions = null;
-
-    before(() => {
-      jdlOptions = new JDLOptions();
-    });
-
-    afterEach(() => {
-      jdlOptions = new JDLOptions();
-    });
-
-    context('when passing an invalid name', () => {
-      it('returns an empty array', () => {
-        expect(jdlOptions.getOptionsForName()).to.be.empty;
-      });
-    });
-    context('when checking for an absent option', () => {
-      it('returns an empty array', () => {
-        expect(jdlOptions.getOptionsForName(UnaryOptions.SKIP_CLIENT)).to.be.empty;
-      });
-    });
-    context('when checking for a present option', () => {
-      let option1 = null;
-      let option2 = null;
-      let option3 = null;
-
-      before(() => {
-        option1 = new JDLUnaryOption({
-          name: UnaryOptions.SKIP_CLIENT
-        });
-        option2 = new JDLBinaryOption({
-          name: BinaryOptions.Options.SERVICE,
-          value: BinaryOptions.Values.service.SERVICE_CLASS
-        });
-        option3 = new JDLBinaryOption({
-          name: BinaryOptions.Options.SERVICE,
-          value: BinaryOptions.Values.service.SERVICE_IMPL
-        });
-
-        jdlOptions.addOption(option1);
-        jdlOptions.addOption(option2);
-        jdlOptions.addOption(option3);
-      });
-
-      it('returns it', () => {
-        expect(jdlOptions.getOptionsForName(UnaryOptions.SKIP_CLIENT)).to.deep.equal([option1]);
-        expect(jdlOptions.getOptionsForName(BinaryOptions.Options.SERVICE)).to.deep.equal([option2, option3]);
+        expect(options.has(UNARY_OPTIONS.SKIP_CLIENT)).to.be.true;
+        expect(options.has(UNARY_OPTIONS.SKIP_SERVER)).to.be.false;
       });
     });
   });
   describe('#toString', () => {
     const options = new JDLOptions();
-
     before(() => {
       options.addOption(new JDLUnaryOption({
-        name: UnaryOptions.SKIP_CLIENT,
+        name: UNARY_OPTIONS.SKIP_CLIENT,
         entityNames: ['A', 'B', 'C'],
         excludedNames: ['M']
       }));
-      options.addOption(new JDLUnaryOption({ name: UnaryOptions.SKIP_SERVER, entityNames: ['D'] }));
+      options.addOption(new JDLUnaryOption({ name: UNARY_OPTIONS.SKIP_SERVER, entityNames: ['D'] }));
       options.addOption(new JDLUnaryOption({
-        name: UnaryOptions.SKIP_CLIENT,
+        name: UNARY_OPTIONS.SKIP_CLIENT,
         entityNames: ['A', 'J'],
         excludedNames: ['N', 'O']
       }));
     });
-
     it('stringifies the options', () => {
       expect(options.toString()).to.eq('skipClient A, B, C, J except M, N, O\nskipServer D');
     });

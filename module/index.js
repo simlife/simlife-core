@@ -17,16 +17,18 @@
  * limitations under the License.
  */
 
-const ApplicationTypes = require('../lib/core/simlife/application_types');
-const BinaryOptions = require('../lib/core/simlife/binary_options');
-const UnaryOptions = require('../lib/core/simlife/unary_options');
-const RelationshipTypes = require('../lib/core/simlife/relationship_types');
-const FieldTypes = require('../lib/core/simlife/field_types');
-const Validations = require('../lib/core/simlife/validations');
-const DatabaseTypes = require('../lib/core/simlife/database_types');
-
+const BINARY_OPTIONS = require('../lib/core/simlife/binary_options');
+const UNARY_OPTIONS = require('../lib/core/simlife/unary_options');
+const RELATIONSHIP_TYPES = require('../lib/core/simlife/relationship_types');
+const FIELD_TYPES = require('../lib/core/simlife/field_types');
+const VALIDATIONS = require('../lib/core/simlife/validations');
+const DATABASE_TYPES = require('../lib/core/simlife/database_types');
+const JDLReader = require('../lib/reader/jdl_reader');
+const JsonReader = require('../lib/reader/json_reader');
+const JDLParser = require('../lib/parser/jdl_parser');
+const convertToSimlifeJSON = require('../lib/parser/entity_parser').parse;
+const JsonParser = require('../lib/parser/json_parser');
 const JDLObject = require('../lib/core/jdl_object');
-const JDLApplication = require('../lib/core/jdl_application');
 const JDLEntity = require('../lib/core/jdl_entity');
 const JDLField = require('../lib/core/jdl_field');
 const JDLValidation = require('../lib/core/jdl_validation');
@@ -36,39 +38,29 @@ const JDLRelationships = require('../lib/core/jdl_relationships');
 const JDLUnaryOption = require('../lib/core/jdl_unary_option');
 const JDLBinaryOption = require('../lib/core/jdl_binary_option');
 const JDLOptions = require('../lib/core/jdl_options');
-
-const JDLImporter = require('../lib/jdl/jdl_importer');
-const JDLReader = require('../lib/reader/jdl_reader');
-const JsonReader = require('../lib/reader/json_reader');
-const DocumentParser = require('../lib/parser/document_parser');
-const EntityParser = require('../lib/parser/entity_parser');
-const JsonParser = require('../lib/parser/json_parser');
-const SimlifeApplicationExporter = require('../lib/export/simlife_application_exporter');
-const SimlifeEntityExporter = require('../lib/export/simlife_entity_exporter');
-const JDLExporter = require('../lib/export/jdl_exporter');
+const JSONExporter = require('../lib/export/json_exporter');
+const exportToJDL = require('../lib/export/jdl_exporter').exportToJDL;
 const JSONFileReader = require('../lib/reader/json_file_reader');
 const ReservedKeywords = require('../lib/core/simlife/reserved_keywords');
-const FileUtils = require('../lib/utils/file_utils');
 const ObjectUtils = require('../lib/utils/object_utils');
 const FormatUtils = require('../lib/utils/format_utils');
 const StringUtils = require('../lib/utils/string_utils');
+const Set = require('../lib/utils/objects/set');
 
 module.exports = {
   /* Simlife notions */
-  SimlifeApplicationTypes: ApplicationTypes,
-  SimlifeBinaryOptions: BinaryOptions,
-  SimlifeUnaryOptions: UnaryOptions,
-  SimlifeRelationshipTypes: RelationshipTypes,
-  SimlifeValidations: Validations,
-  SimlifeFieldTypes: FieldTypes,
-  SimlifeDatabaseTypes: DatabaseTypes,
+  SimlifeBinaryOptions: BINARY_OPTIONS,
+  SimlifeUnaryOptions: UNARY_OPTIONS,
+  SimlifeRelationshipTypes: RELATIONSHIP_TYPES,
+  SimlifeValidations: VALIDATIONS,
+  SimlifeFieldTypes: FIELD_TYPES,
+  SimlifeDatabaseTypes: DATABASE_TYPES,
   isReservedKeyword: ReservedKeywords.isReserved,
   isReservedClassName: ReservedKeywords.isReservedClassName,
   isReservedTableName: ReservedKeywords.isReservedTableName,
   isReservedFieldName: ReservedKeywords.isReservedFieldName,
   /* JDL objects */
   JDLObject,
-  JDLApplication,
   JDLEntity,
   JDLField,
   JDLValidation,
@@ -78,34 +70,33 @@ module.exports = {
   JDLUnaryOption,
   JDLBinaryOption,
   JDLOptions,
-  /* JDL Importer */
-  JDLImporter,
   /* JDL reading */
+  parse: JDLReader.parse,
   parseFromFiles: JDLReader.parseFromFiles,
-  /* JSON reading */
+  /* Json reading */
   parseJsonFromDir: JsonReader.parseFromDir,
   /* JDL conversion */
-  convertToJDLFromConfigurationObject: DocumentParser.parseFromConfigurationObject,
-  convertToSimlifeJSON: EntityParser.parse,
-  /* JSON  conversion */
+  convertToJDL: JDLParser.parse,
+  convertToJDLFromConfigurationObject: JDLParser.parseFromConfigurationObject,
+  convertToSimlifeJSON,
+  /* Json conversion */
   convertJsonEntitiesToJDL: JsonParser.parseEntities,
   convertJsonServerOptionsToJDL: JsonParser.parseServerOptions,
-  /* Entity exporting to JSON */
-  exportEntities: SimlifeEntityExporter.exportEntities,
-  exportEntitiesInApplications: SimlifeEntityExporter.exportEntitiesInApplications,
-  /* Application exporting */
-  exportApplications: SimlifeApplicationExporter.exportApplications,
-  exportApplication: SimlifeApplicationExporter.exportApplication,
+  /* JSON exporting */
+  exportToJSON: JSONExporter.exportToJSON,
   /* JDL exporting */
-  exportToJDL: JDLExporter.exportToJDL,
+  exportToJDL,
   /* JDL utils */
   isJDLFile: JDLReader.checkFileIsJDLFile,
   /* JSON utils */
   ObjectUtils,
+  createSimlifeJSONFolder: JSONExporter.createSimlifeJSONFolder,
+  filterOutUnchangedEntities: JSONExporter.filterOutUnchangedEntities,
   readEntityJSON: JSONFileReader.readEntityJSON,
   toFilePath: JSONFileReader.toFilePath,
+  /* Objects */
+  Set,
   /* Utils */
-  FileUtils,
   camelCase: StringUtils.camelCase,
   dateFormatForLiquibase: FormatUtils.dateFormatForLiquibase
 };

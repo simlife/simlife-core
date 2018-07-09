@@ -20,33 +20,23 @@
 /* eslint-disable no-new, no-unused-expressions */
 const expect = require('chai').expect;
 const JDLValidation = require('../../../lib/core/jdl_validation');
-const Validations = require('../../../lib/core/simlife/validations');
+const VALIDATIONS = require('../../../lib/core/simlife/validations').VALIDATIONS;
 
 describe('JDLValidation', () => {
   context('::new', () => {
     context('when not passing any argument', () => {
-      let validation = null;
-
-      before(() => {
-        validation = new JDLValidation();
-      });
-
       it('defaults on the \'required\' validation', () => {
+        const validation = new JDLValidation();
         expect(validation.name).to.eq('required');
         expect(validation.value).to.eq('');
       });
     });
     context('when passing arguments', () => {
-      let validation = null;
-
-      before(() => {
-        validation = new JDLValidation({
+      it('uses them', () => {
+        const validation = new JDLValidation({
           name: 'min',
           value: 42
         });
-      });
-
-      it('uses them', () => {
         expect(validation.name).to.eq('min');
         expect(validation.value).to.eq(42);
       });
@@ -72,15 +62,15 @@ describe('JDLValidation', () => {
       });
       context('with a valid name but an invalid value', () => {
         it('returns false', () => {
-          expect(JDLValidation.isValid({ name: Validations.MIN })).to.be.false;
+          expect(JDLValidation.isValid({ name: VALIDATIONS.MIN })).to.be.false;
         });
       });
     });
     context('when checking the validity of a valid object', () => {
       it('returns true', () => {
-        expect(JDLValidation.isValid({ name: Validations.REQUIRED })).to.be.true;
+        expect(JDLValidation.isValid({ name: VALIDATIONS.REQUIRED })).to.be.true;
         expect(JDLValidation.isValid({
-          name: Validations.MIN,
+          name: VALIDATIONS.MIN,
           value: 42
         })).to.be.true;
       });
@@ -88,36 +78,25 @@ describe('JDLValidation', () => {
   });
   describe('#toString', () => {
     context('with no value', () => {
-      let validation = null;
-
-      before(() => {
-        validation = new JDLValidation();
-      });
-
       it('stringifies its content', () => {
+        const validation = new JDLValidation();
         expect(validation.toString()).to.eq('required');
       });
     });
     context('with a value', () => {
-      let validation = null;
-      let args = {};
-
-      before(() => {
-        args = {
+      it('stringifies its content', () => {
+        const args = {
           name: 'min',
           value: 42
         };
-        validation = new JDLValidation(args);
-      });
-
-      it('stringifies its content', () => {
+        const validation = new JDLValidation(args);
         expect(validation.toString()).to.eq(`${args.name}(${args.value})`);
       });
     });
     context('when exporting a regexp pattern', () => {
       it('properly formats it', () => {
         expect(new JDLValidation({
-          name: Validations.PATTERN,
+          name: VALIDATIONS.PATTERN,
           value: '[A-z0-9]'
         }).toString()).to.equal('pattern(/[A-z0-9]/)');
       });

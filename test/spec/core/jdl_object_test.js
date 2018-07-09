@@ -20,11 +20,11 @@
 /* eslint-disable no-new, no-unused-expressions */
 const expect = require('chai').expect;
 
-const BinaryOptions = require('../../../lib/core/simlife/binary_options');
-const UnaryOptions = require('../../../lib/core/simlife/unary_options');
-const RelationshipTypes = require('../../../lib/core/simlife/relationship_types');
+const fail = expect.fail;
+const BINARY_OPTIONS = require('../../../lib/core/simlife/binary_options');
+const UNARY_OPTIONS = require('../../../lib/core/simlife/unary_options');
+const RELATIONSHIP_TYPES = require('../../../lib/core/simlife/relationship_types');
 const JDLObject = require('../../../lib/core/jdl_object');
-const JDLApplication = require('../../../lib/core/jdl_application');
 const JDLEntity = require('../../../lib/core/jdl_entity');
 const JDLField = require('../../../lib/core/jdl_field');
 const JDLValidation = require('../../../lib/core/jdl_validation');
@@ -34,81 +34,23 @@ const JDLUnaryOption = require('../../../lib/core/jdl_unary_option');
 const JDLBinaryOption = require('../../../lib/core/jdl_binary_option');
 
 describe('JDLObject', () => {
-  describe('#addApplication', () => {
-    context('when adding an invalid application', () => {
-      const object = new JDLObject();
-
-      context('such as a nil application', () => {
-        it('fails', () => {
-          expect(() => {
-            object.addApplication(null);
-          }).to.throw('The application must be valid in order to be added.\nErrors: No application');
-        });
-      });
-      context('such as an incomplete application', () => {
-        it('fails', () => {
-          expect(() => {
-            object.addApplication({
-              config: {
-                baseName: 'toto'
-              }
-            });
-          }).to.throw('The application must be valid in order to be added.\n' +
-            'Errors: No authentication type, No build tool');
-        });
-      });
-    });
-    context('when adding a valid application', () => {
-      let object = null;
-      let application = null;
-
-      before(() => {
-        object = new JDLObject();
-        application = new JDLApplication({ simlifeVersion: '4.9.0' });
-        object.addApplication(application);
-      });
-
-      it('works', () => {
-        expect(object.applications[application.config.baseName]).to.deep.eq(application);
-      });
-    });
-  });
-  describe('#getApplicationQuantity', () => {
-    let jdlObject = null;
-
-    before(() => {
-      jdlObject = new JDLObject();
-    });
-
-    context('when having no application', () => {
-      it('returns 0', () => {
-        expect(jdlObject.getApplicationQuantity()).to.equal(0);
-      });
-    });
-
-    context('when having one or more applications', () => {
-      before(() => {
-        jdlObject.addApplication(new JDLApplication({}));
-      });
-
-      it('returns the number of applications', () => {
-        expect(jdlObject.getApplicationQuantity()).to.equal(1);
-      });
-    });
-  });
   describe('#addEntity', () => {
     context('when adding an invalid entity', () => {
       const object = new JDLObject();
 
       context('such as a nil object', () => {
         it('fails', () => {
-          expect(() => {
+          try {
             object.addEntity(null);
-          }).to.throw('The entity must be valid in order to be added.\nErrors: No entity');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('InvalidObjectException');
+            expect(error.message).to.eq('The entity must be valid in order to be added.\nErrors: No entity');
+          }
         });
       });
       context('such as an incomplete entity', () => {
-        expect(() => {
+        try {
           object.addEntity({
             name: 'Something',
             tableName: 't_something',
@@ -118,7 +60,13 @@ describe('JDLObject', () => {
               validations: []
             }]
           });
-        }).to.throw('The entity must be valid in order to be added.\nErrors: For field #1: No field name');
+          fail();
+        } catch (error) {
+          expect(error.name).to.eq('InvalidObjectException');
+          expect(
+            error.message
+          ).to.eq('The entity must be valid in order to be added.\nErrors: For field #1: No field name');
+        }
       });
     });
     context('when adding a valid entity', () => {
@@ -165,75 +113,30 @@ describe('JDLObject', () => {
       });
     });
   });
-  describe('#getEntityQuantity', () => {
-    let jdlObject = null;
-
-    before(() => {
-      jdlObject = new JDLObject();
-    });
-
-    context('when having no entity', () => {
-      it('returns 0', () => {
-        expect(jdlObject.getEntityQuantity()).to.equal(0);
-      });
-    });
-
-    context('when having one or more entities', () => {
-      before(() => {
-        jdlObject.addEntity(new JDLEntity({
-          name: 'toto'
-        }));
-      });
-
-      it('returns the number of entities', () => {
-        expect(jdlObject.getEntityQuantity()).to.equal(1);
-      });
-    });
-  });
-  describe('#getEntityNames', () => {
-    let jdlObject = null;
-
-    before(() => {
-      jdlObject = new JDLObject();
-    });
-
-    afterEach(() => {
-      jdlObject = new JDLObject();
-    });
-
-    context('when having no entity', () => {
-      it('returns an empty list', () => {
-        expect(jdlObject.getEntityNames()).to.be.empty;
-      });
-    });
-    context('when having entities', () => {
-      before(() => {
-        jdlObject.addEntity(new JDLEntity({ name: 'A' }));
-        jdlObject.addEntity(new JDLEntity({ name: 'B' }));
-        jdlObject.addEntity(new JDLEntity({ name: 'C' }));
-      });
-
-      it('returns the entity names', () => {
-        expect(jdlObject.getEntityNames()).to.deep.equal(['A', 'B', 'C']);
-      });
-    });
-  });
   describe('#addEnum', () => {
     context('when adding an invalid enum', () => {
       const object = new JDLObject();
 
       context('such as a nil enum', () => {
         it('fails', () => {
-          expect(() => {
+          try {
             object.addEnum(null);
-          }).to.throw('The enum must be valid in order to be added.\nErrors: No enumeration');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('InvalidObjectException');
+            expect(error.message).to.eq('The enum must be valid in order to be added.\nErrors: No enumeration');
+          }
         });
       });
       context('such as an incomplete enum', () => {
         it('fails', () => {
-          expect(() => {
+          try {
             object.addEnum({ values: ['A', 'B'] });
-          }).to.throw('The enum must be valid in order to be added.\nErrors: No enumeration name');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('InvalidObjectException');
+            expect(error.message).to.eq('The enum must be valid in order to be added.\nErrors: No enumeration name');
+          }
         });
       });
     });
@@ -269,53 +172,37 @@ describe('JDLObject', () => {
       });
     });
   });
-  describe('#getEnumQuantity', () => {
-    let jdlObject = null;
-
-    before(() => {
-      jdlObject = new JDLObject();
-    });
-
-    context('when having no enum', () => {
-      it('returns 0', () => {
-        expect(jdlObject.getEnumQuantity()).to.equal(0);
-      });
-    });
-
-    context('when having one or more enums', () => {
-      before(() => {
-        jdlObject.addEnum(new JDLEnum({
-          name: 'toto'
-        }));
-      });
-
-      it('returns the number of enums', () => {
-        expect(jdlObject.getEnumQuantity()).to.equal(1);
-      });
-    });
-  });
   describe('#addRelationship', () => {
     context('when adding an invalid relationship', () => {
       const object = new JDLObject();
 
       context('such as a nil relationship', () => {
         it('fails', () => {
-          expect(() => {
+          try {
             object.addRelationship(null);
-          }).to.throw('The relationship must be valid in order to be added.\nErrors: No relationship');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('InvalidObjectException');
+            expect(error.message).to.eq('The relationship must be valid in order to be added.\nErrors: No relationship');
+          }
         });
       });
       context('such as an incomplete relationship', () => {
         it('fails', () => {
-          expect(() => {
+          try {
             object.addRelationship({
               from: {},
               to: { name: 'Valid', tableName: 't_valid', fields: [] },
-              type: RelationshipTypes.MANY_TO_MANY,
+              type: RELATIONSHIP_TYPES.RELATIONSHIP_TYPES.MANY_TO_MANY,
               injectedFieldInFrom: 'something'
             });
-          }).to.throw('The relationship must be valid in order to be added.\n' +
-            'Errors: Wrong source entity: No entity name, No table name, No fields object');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('InvalidObjectException');
+            expect(
+              error.message
+            ).to.eq('The relationship must be valid in order to be added.\nErrors: Wrong source entity: No entity name, No table name, No fields object');
+          }
         });
       });
     });
@@ -328,7 +215,7 @@ describe('JDLObject', () => {
         relationship = new JDLRelationship({
           from: { name: 'Valid2', tableName: 't_valid2', fields: [] },
           to: { name: 'Valid', tableName: 't_valid', fields: [] },
-          type: RelationshipTypes.MANY_TO_MANY,
+          type: RELATIONSHIP_TYPES.RELATIONSHIP_TYPES.MANY_TO_MANY,
           injectedFieldInFrom: 'something'
         });
         object.addRelationship(relationship);
@@ -346,7 +233,7 @@ describe('JDLObject', () => {
         const relationship = new JDLRelationship({
           from: { name: 'Valid2', tableName: 't_valid2', fields: [] },
           to: { name: 'Valid', tableName: 't_valid', fields: [] },
-          type: RelationshipTypes.MANY_TO_MANY,
+          type: RELATIONSHIP_TYPES.RELATIONSHIP_TYPES.MANY_TO_MANY,
           injectedFieldInFrom: 'something'
         });
         object.addRelationship(relationship);
@@ -358,199 +245,58 @@ describe('JDLObject', () => {
       });
     });
   });
-  describe('#getRelationshipQuantity', () => {
-    let jdlObject = null;
-
-    before(() => {
-      jdlObject = new JDLObject();
-    });
-
-    context('when having no relationship', () => {
-      it('returns 0', () => {
-        expect(jdlObject.getRelationshipQuantity()).to.equal(0);
-      });
-    });
-
-    context('when having one or more relationships', () => {
-      before(() => {
-        jdlObject.addRelationship(new JDLRelationship({
-          from: new JDLEntity({ name: 'a' }),
-          to: new JDLEntity({ name: 'b' }),
-          type: RelationshipTypes.ONE_TO_ONE,
-          injectedFieldInFrom: 'b'
-        }));
-      });
-
-      it('returns the number of relationships', () => {
-        expect(jdlObject.getRelationshipQuantity()).to.equal(1);
-      });
-    });
-  });
   describe('#addOption', () => {
     context('when adding an invalid option', () => {
       const object = new JDLObject();
 
       context('such as a nil option', () => {
         it('fails', () => {
-          expect(() => {
+          try {
             object.addOption(null);
-          }).to.throw('The option must be valid in order to be added.\nErrors: No option');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('InvalidObjectException');
+            expect(error.message).to.eq('The option must be valid in order to be added.\nErrors: No option');
+          }
         });
       });
       context('such as an empty object', () => {
         it('fails', () => {
-          expect(() => {
+          try {
             object.addOption({});
-          }).to.throw('The option must be valid in order to be added.\n' +
-            'Errors: No option name, No entity names, No excluded names, No type');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('InvalidObjectException');
+            expect(
+              error.message
+            ).to.eq('The option must be valid in order to be added.\nErrors: No option name, No entity names, No excluded names, No type');
+          }
         });
       });
       context('such as a wrong option/value', () => {
         it('fails', () => {
-          expect(() => {
+          try {
             object.addOption({
-              name: UnaryOptions.SKIP_CLIENT,
+              name: UNARY_OPTIONS.UNARY_OPTIONS.SKIP_CLIENT,
               type: 'WrongType'
             });
-          }).to.throw('The option must be valid in order to be added.\n' +
-            'Errors: No entity names, No excluded names, No type');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('InvalidObjectException');
+            expect(
+              error.message
+            ).to.eq('The option must be valid in order to be added.\nErrors: No entity names, No excluded names, No type');
+          }
         });
       });
     });
     context('when adding a valid option', () => {
       it('works', () => {
-        new JDLObject().addOption(new JDLUnaryOption({ name: UnaryOptions.SKIP_CLIENT }));
-      });
-    });
-  });
-  describe('#getOptionsForName', () => {
-    let jdlObject = null;
-
-    before(() => {
-      jdlObject = new JDLObject();
-    });
-
-    afterEach(() => {
-      jdlObject = new JDLObject();
-    });
-
-    context('when passing an invalid name', () => {
-      it('returns an empty array', () => {
-        expect(jdlObject.getOptionsForName()).to.be.empty;
-      });
-    });
-    context('when checking for an absent option', () => {
-      it('returns an empty array', () => {
-        expect(jdlObject.getOptionsForName(UnaryOptions.SKIP_CLIENT)).to.be.empty;
-      });
-    });
-    context('when checking for a present option', () => {
-      let option1 = null;
-      let option2 = null;
-      let option3 = null;
-
-      before(() => {
-        option1 = new JDLUnaryOption({
-          name: UnaryOptions.SKIP_CLIENT
-        });
-        option2 = new JDLBinaryOption({
-          name: BinaryOptions.Options.SERVICE,
-          value: BinaryOptions.Values.service.SERVICE_CLASS
-        });
-        option3 = new JDLBinaryOption({
-          name: BinaryOptions.Options.SERVICE,
-          value: BinaryOptions.Values.service.SERVICE_IMPL
-        });
-
-        jdlObject.addOption(option1);
-        jdlObject.addOption(option2);
-        jdlObject.addOption(option3);
-      });
-
-      it('returns it', () => {
-        expect(jdlObject.getOptionsForName(UnaryOptions.SKIP_CLIENT)).to.deep.equal([option1]);
-        expect(jdlObject.getOptionsForName(BinaryOptions.Options.SERVICE)).to.deep.equal([option2, option3]);
-      });
-    });
-  });
-  describe('#getOptionQuantity', () => {
-    let jdlObject = null;
-
-    before(() => {
-      jdlObject = new JDLObject();
-    });
-
-    context('when having no option', () => {
-      it('returns 0', () => {
-        expect(jdlObject.getOptionQuantity()).to.equal(0);
-      });
-    });
-
-    context('when having one or more options', () => {
-      before(() => {
-        jdlObject.addOption(new JDLUnaryOption({
-          name: UnaryOptions.SKIP_CLIENT
-        }));
-      });
-
-      it('returns the number of options', () => {
-        expect(jdlObject.getOptionQuantity()).to.equal(1);
-      });
-    });
-  });
-  describe('#isEntityInMicroservice', () => {
-    let jdlObject = null;
-
-    context('when an entity is in a microservice', () => {
-      context('because no entity name has been specified', () => {
-        before(() => {
-          jdlObject = new JDLObject();
-          const microserviceOption = new JDLBinaryOption({
-            name: BinaryOptions.Options.MICROSERVICE,
-            value: 'toto'
-          });
-          jdlObject.addOption(microserviceOption);
-        });
-
-        it('returns true', () => {
-          expect(jdlObject.isEntityInMicroservice('A')).to.be.true;
-        });
-      });
-
-      context('because entity names have been specified', () => {
-        before(() => {
-          jdlObject = new JDLObject();
-          const microserviceOption = new JDLBinaryOption({
-            name: BinaryOptions.Options.MICROSERVICE,
-            value: 'toto',
-            entityNames: ['A']
-          });
-          jdlObject.addOption(microserviceOption);
-        });
-
-        it('returns true', () => {
-          expect(jdlObject.isEntityInMicroservice('A')).to.be.true;
-        });
-      });
-    });
-    context('when an entity is not in a microservice', () => {
-      before(() => {
-        jdlObject = new JDLObject();
-        const microserviceOption = new JDLBinaryOption({
-          name: BinaryOptions.Options.MICROSERVICE,
-          value: 'toto',
-          entityNames: ['A']
-        });
-        jdlObject.addOption(microserviceOption);
-      });
-
-      it('returns false', () => {
-        expect(jdlObject.isEntityInMicroservice('B')).to.be.false;
+        new JDLObject().addOption(new JDLUnaryOption({ name: UNARY_OPTIONS.UNARY_OPTIONS.SKIP_CLIENT }));
       });
     });
   });
   describe('#toString', () => {
-    let application = null;
     let object = null;
     let entityA = null;
     let entityB = null;
@@ -561,8 +307,6 @@ describe('JDLObject', () => {
 
     before(() => {
       object = new JDLObject();
-      application = new JDLApplication({ simlifeVersion: '4.9.0' });
-      object.addApplication(application);
       entityA = new JDLEntity({ name: 'EntityA', tableName: 't_entity_a' });
       const field = new JDLField({ name: 'myField', type: 'String' });
       field.addValidation(new JDLValidation());
@@ -575,17 +319,17 @@ describe('JDLObject', () => {
       relationship = new JDLRelationship({
         from: entityA,
         to: entityB,
-        type: RelationshipTypes.ONE_TO_ONE,
+        type: RELATIONSHIP_TYPES.RELATIONSHIP_TYPES.ONE_TO_ONE,
         injectedFieldInFrom: 'entityB',
         injectedFieldInTo: 'entityA(myField)'
       });
       object.addRelationship(relationship);
-      option = new JDLUnaryOption({ name: UnaryOptions.SKIP_CLIENT });
+      option = new JDLUnaryOption({ name: UNARY_OPTIONS.UNARY_OPTIONS.SKIP_CLIENT });
       option.excludeEntity(entityA);
       object.addOption(option);
       option2 = new JDLBinaryOption({
-        name: BinaryOptions.Options.DTO,
-        value: BinaryOptions.Values.dto.MAPSTRUCT
+        name: BINARY_OPTIONS.BINARY_OPTIONS.DTO,
+        value: BINARY_OPTIONS.BINARY_OPTION_VALUES.dto.MAPSTRUCT
       });
       option2.addEntity(entityB);
       object.addOption(option2);
@@ -593,9 +337,7 @@ describe('JDLObject', () => {
 
     it('stringifies the JDL object', () => {
       expect(object.toString()).to.eq(
-        `${application.toString()}
-
-${entityA.toString()}
+        `${entityA.toString()}
 ${entityB.toString()}
 ${enumObject.toString()}
 

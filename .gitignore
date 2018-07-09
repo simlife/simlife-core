@@ -9,4 +9,3 @@ simlife-jdl.jh
 coverage/*
 sonar-project.properties
 .nyc_output/*
-simlife-core.iml

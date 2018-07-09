@@ -20,436 +20,223 @@
 /* eslint-disable no-new, no-unused-expressions */
 const expect = require('chai').expect;
 
+const fail = expect.fail;
+const JDLParser = require('../../../lib/parser/jdl_parser');
 const EntityParser = require('../../../lib/parser/entity_parser');
-const ApplicationTypes = require('../../../lib/core/simlife/application_types');
-const DatabaseTypes = require('../../../lib/core/simlife/database_types');
-const JDLObject = require('../../../lib/core/jdl_object');
-const JDLApplication = require('../../../lib/core/jdl_application');
-const JDLEntity = require('../../../lib/core/jdl_entity');
-const JDLField = require('../../../lib/core/jdl_field');
-const JDLEnum = require('../../../lib/core/jdl_enum');
-const JDLValidation = require('../../../lib/core/jdl_validation');
-const JDLRelationship = require('../../../lib/core/jdl_relationship');
-const JDLRelationships = require('../../../lib/core/jdl_relationships');
-const JDLUnaryOption = require('../../../lib/core/jdl_unary_option');
-const JDLBinaryOption = require('../../../lib/core/jdl_binary_option');
-const FieldTypes = require('../../../lib/core/simlife/field_types');
-const Validations = require('../../../lib/core/simlife/validations');
-const UnaryOptions = require('../../../lib/core/simlife/unary_options');
-const BinaryOptions = require('../../../lib/core/simlife/binary_options').Options;
-const BinaryOptionValues = require('../../../lib/core/simlife/binary_options').Values;
-const RelationshipTypes = require('../../../lib/core/simlife/relationship_types');
-
+const parseFromFiles = require('../../../lib/reader/jdl_reader').parseFromFiles;
+const ApplicationTypes = require('../../../lib/core/simlife/application_types').APPLICATION_TYPES;
+const DatabaseTypes = require('../../../lib/core/simlife/database_types').Types;
 
 describe('EntityParser', () => {
-  describe('::parse', () => {
+  describe('::convert', () => {
     context('when passing invalid parameters', () => {
       context('such as undefined', () => {
         it('throws an error', () => {
-          expect(() => {
+          try {
             EntityParser.parse();
-          }).to.throw('The JDL object and the database type are both mandatory.');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('NullPointerException');
+          }
         });
       });
       context('such as an no databaseType', () => {
+        let input = null;
+
+        before(() => {
+          input = parseFromFiles(['./test/test_files/valid_jdl.jdl']);
+        });
+
         it('throws an error', () => {
-          expect(() => {
-            EntityParser.parse({ jdlObject: new JDLObject() });
-          }).to.throw('The JDL object and the database type are both mandatory.');
+          try {
+            EntityParser.parse({ jdlObject: JDLParser.parse(input, 'sql') });
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('NullPointerException');
+          }
         });
       });
       context('such as invalid databaseType', () => {
-        let jdlObject = null;
+        let input = null;
 
         before(() => {
-          const entityA = new JDLEntity({ name: 'A' });
-          const entityB = new JDLEntity({ name: 'B' });
-          const relationship = new JDLRelationship({
-            from: entityA,
-            to: entityB,
-            injectedFieldInFrom: 'b',
-            injectedFieldInTo: 'a',
-            type: RelationshipTypes.MANY_TO_MANY
-          });
-          jdlObject = new JDLObject();
-          jdlObject.addEntity(entityA);
-          jdlObject.addEntity(entityB);
-          jdlObject.addRelationship(relationship);
+          input = parseFromFiles(['./test/test_files/valid_jdl.jdl']);
         });
 
         it('throws an error', () => {
-          expect(() => {
+          try {
             EntityParser.parse({
-              jdlObject,
-              databaseType: DatabaseTypes.MONGODB
+              jdlObject: JDLParser.parse(input, 'sql'),
+              databaseType: 'mongodb'
             });
-          }).to.throw('NoSQL entities don\'t have relationships.');
+            fail();
+          } catch (error) {
+            expect(error.name).to.eq('NoSQLModelingException');
+          }
         });
       });
     });
     context('when passing valid arguments', () => {
-      let content = null;
-      let jdlObject = null;
-
-      before(() => {
-        const entityA = new JDLEntity({
-          name: 'EntityA',
-          tableName: 'a',
-          fields: {
-            aa: new JDLField({
-              name: 'aa',
-              type: FieldTypes.CommonDBTypes.STRING,
-              comment: 'My field',
-              validations: { required: new JDLValidation({ name: Validations.REQUIRED }) }
-            }),
-            ab: new JDLField({
-              name: 'ab',
-              type: FieldTypes.CommonDBTypes.ZONED_DATE_TIME
-            })
-          }
-        });
-        const enumObject = new JDLEnum({
-          name: 'EnumA',
-          values: ['A', 'B', 'C']
-        });
-        const entityB = new JDLEntity({
-          name: 'EntityB',
-          fields: {
-            ba: new JDLField({
-              name: 'ba',
-              type: enumObject.name
-            })
-          }
-        });
-        const oneToOneRelationship = new JDLRelationship({
-          type: RelationshipTypes.ONE_TO_ONE,
-          from: entityA,
-          to: entityB,
-          injectedFieldInFrom: 'b',
-          injectedFieldInTo: 'a',
-          isInjectedFieldInFromRequired: true
-        });
-        const skipClientOption = new JDLUnaryOption({
-          name: UnaryOptions.SKIP_CLIENT,
-          entityNames: [entityA.name]
-        });
-        const paginationOption = new JDLBinaryOption({
-          name: BinaryOptions.PAGINATION,
-          value: BinaryOptionValues.pagination.PAGER,
-          excludedNames: [entityB.name]
-        });
-        const microserviceOption = new JDLBinaryOption({
-          name: BinaryOptions.MICROSERVICE,
-          value: 'myMs'
-        });
-        jdlObject = new JDLObject();
-        jdlObject.addEntity(entityA);
-        jdlObject.addEntity(entityB);
-        jdlObject.addEnum(enumObject);
-        jdlObject.addRelationship(oneToOneRelationship);
-        jdlObject.addOption(skipClientOption);
-        jdlObject.addOption(paginationOption);
-        jdlObject.addOption(microserviceOption);
-      });
-
       context('when passing args for a gateway app', () => {
+        let input = null;
+
+        before(() => {
+          input = parseFromFiles(['./test/test_files/complex_jdl.jdl']);
+        });
+
         it('does not fail because of NoSQL modeling mistakes', () => {
           EntityParser.parse({
-            jdlObject,
-            databaseType: DatabaseTypes.CASSANDRA,
-            applicationType: ApplicationTypes.GATEWAY
+            jdlObject: JDLParser.parse(input, 'mysql'),
+            databaseType: 'cassandra',
+            applicationType: 'gateway'
           });
         });
       });
       context('when converting JDL to entity json for SQL type', () => {
+        let content = null;
+
         before(() => {
+          const input = parseFromFiles(['./test/test_files/complex_jdl.jdl']);
           content = EntityParser.parse({
-            jdlObject,
-            databaseType: DatabaseTypes.MYSQL
+            jdlObject: JDLParser.parse(input, 'mysql'),
+            databaseType: 'mysql'
           });
         });
 
         it('converts it', () => {
           expect(content).not.to.be.null;
-          expect(Object.keys(content)).to.have.length(2);
-          expect(content.EntityA.changelogDate).not.to.be.undefined;
-          expect(content.EntityB.changelogDate).not.to.be.undefined;
-          delete content.EntityA.changelogDate;
-          delete content.EntityB.changelogDate;
-          expect(content).to.deep.equal({
-            EntityA: {
-              name: 'EntityA',
-              applications: '*',
-              clientRootFolder: '',
-              dto: 'no',
-              entityTableName: 'a',
-              fields: [
-                {
-                  fieldName: 'aa',
-                  fieldType: 'String',
-                  fieldValidateRules: ['required'],
-                  javadoc: 'My field'
-                },
-                {
-                  fieldName: 'ab',
-                  fieldType: 'ZonedDateTime'
-                }
-              ],
-              fluentMethods: true,
-              javadoc: undefined,
-              jpaMetamodelFiltering: false,
-              microserviceName: 'myMs',
-              pagination: 'pager',
-              relationships: [
-                {
-                  otherEntityField: 'id',
-                  otherEntityName: 'entityB',
-                  otherEntityRelationshipName: 'a',
-                  ownerSide: true,
-                  relationshipName: 'b',
-                  relationshipType: 'one-to-one',
-                  relationshipValidateRules: 'required'
-                }
-              ],
-              service: 'no',
-              skipClient: true
-            },
-            EntityB: {
-              name: 'EntityB',
-              applications: '*',
-              clientRootFolder: '',
-              dto: 'no',
-              entityTableName: 'entity_b',
-              fields: [
-                {
-                  fieldName: 'ba',
-                  fieldType: 'EnumA',
-                  fieldValues: 'A,B,C'
-                }
-              ],
-              fluentMethods: true,
-              javadoc: undefined,
-              jpaMetamodelFiltering: false,
-              microserviceName: 'myMs',
-              pagination: 'no',
-              relationships: [
-                {
-                  otherEntityName: 'entityA',
-                  otherEntityRelationshipName: 'b',
-                  ownerSide: false,
-                  relationshipName: 'a',
-                  relationshipType: 'one-to-one',
-                }
-              ],
-              service: 'no',
-            }
-          });
+          expect(Object.keys(content).length).to.eq(8);
+          for (let i = 0, entities = Object.keys(content); i < entities.length; i++) {
+            expect(content[entities[i]].fluentMethods).to.eq(true);
+          }
+          expect(content.Department.relationships.length).to.eq(2);
+          expect(content.Department.relationships[1].javadoc).to.eq('A relationship');
+          expect(content.Department.fields.length).to.eq(5);
+          expect(content.Department.entityTableName).to.eq('department');
+          expect(content.Employee.javadoc).to.eq('The Employee entity.\nSecond line in javadoc.');
+          expect(content.Employee.pagination).to.eq('infinite-scroll');
+          expect(content.Employee.relationships[3].javadoc).to.eq('Another side of the same relationship');
+          expect(content.Job.relationships[0].otherEntityRelationshipName).to.eq('job');
+          expect(content.Task.relationships[0].otherEntityRelationshipName).to.eq('chore');
         });
       });
       context('when converting JDL to entity json for MongoDB type', () => {
+        let content = null;
+
         before(() => {
-          jdlObject.relationships = new JDLRelationships();
+          const input = parseFromFiles(['./test/test_files/mongo_jdl.jdl']);
           content = EntityParser.parse({
-            jdlObject,
-            databaseType: DatabaseTypes.MONGODB
+            jdlObject: JDLParser.parse(input, 'mongodb'),
+            databaseType: 'mongodb'
           });
         });
 
         it('converts it', () => {
           expect(content).not.to.be.null;
-          expect(Object.keys(content)).to.have.length(2);
-          expect(content.EntityA.changelogDate).not.to.be.undefined;
-          expect(content.EntityB.changelogDate).not.to.be.undefined;
-          delete content.EntityA.changelogDate;
-          delete content.EntityB.changelogDate;
-          expect(content).to.deep.equal({
-            EntityA: {
-              name: 'EntityA',
-              applications: '*',
-              clientRootFolder: '',
-              dto: 'no',
-              entityTableName: 'a',
-              fields: [
-                {
-                  fieldName: 'aa',
-                  fieldType: 'String',
-                  fieldValidateRules: ['required'],
-                  javadoc: 'My field'
-                },
-                {
-                  fieldName: 'ab',
-                  fieldType: 'ZonedDateTime'
-                }
-              ],
-              fluentMethods: true,
-              javadoc: undefined,
-              jpaMetamodelFiltering: false,
-              microserviceName: 'myMs',
-              pagination: 'pager',
-              relationships: [],
-              service: 'no',
-              skipClient: true
-            },
-            EntityB: {
-              name: 'EntityB',
-              applications: '*',
-              clientRootFolder: '',
-              dto: 'no',
-              entityTableName: 'entity_b',
-              fields: [
-                {
-                  fieldName: 'ba',
-                  fieldType: 'EnumA',
-                  fieldValues: 'A,B,C'
-                }
-              ],
-              fluentMethods: true,
-              javadoc: undefined,
-              jpaMetamodelFiltering: false,
-              microserviceName: 'myMs',
-              pagination: 'no',
-              relationships: [],
-              service: 'no',
-            }
-          });
+          expect(Object.keys(content).length).to.eq(8);
+          expect(content.Department.relationships.length).to.eq(0);
+          expect(content.Department.fields.length).to.eq(2);
+          expect(content.Department.entityTableName).to.eq('department');
+          expect(content.Employee.javadoc).to.eq('The Employee entity.');
+          expect(content.Employee.pagination).to.eq('infinite-scroll');
         });
       });
       context('when converting JDL to entity json for Couchbase type', () => {
+        let content = null;
+
         before(() => {
-          jdlObject.relationships = new JDLRelationships();
+          const input = parseFromFiles(['./test/test_files/couchbase_jdl.jdl']);
           content = EntityParser.parse({
-            jdlObject,
-            databaseType: DatabaseTypes.COUCHBASE
+            jdlObject: JDLParser.parse(input, 'couchbase'),
+            databaseType: 'couchbase'
           });
         });
 
         it('converts it', () => {
           expect(content).not.to.be.null;
-          expect(Object.keys(content)).to.have.length(2);
-          expect(content.EntityA.changelogDate).not.to.be.undefined;
-          expect(content.EntityB.changelogDate).not.to.be.undefined;
-          delete content.EntityA.changelogDate;
-          delete content.EntityB.changelogDate;
-          expect(content).to.deep.equal({
-            EntityA: {
-              name: 'EntityA',
-              applications: '*',
-              clientRootFolder: '',
-              dto: 'no',
-              entityTableName: 'a',
-              fields: [
-                {
-                  fieldName: 'aa',
-                  fieldType: 'String',
-                  fieldValidateRules: ['required'],
-                  javadoc: 'My field'
-                },
-                {
-                  fieldName: 'ab',
-                  fieldType: 'ZonedDateTime'
-                }
-              ],
-              fluentMethods: true,
-              javadoc: undefined,
-              jpaMetamodelFiltering: false,
-              microserviceName: 'myMs',
-              pagination: 'pager',
-              relationships: [],
-              service: 'no',
-              skipClient: true
-            },
-            EntityB: {
-              name: 'EntityB',
-              applications: '*',
-              clientRootFolder: '',
-              dto: 'no',
-              entityTableName: 'entity_b',
-              fields: [
-                {
-                  fieldName: 'ba',
-                  fieldType: 'EnumA',
-                  fieldValues: 'A,B,C'
-                }
-              ],
-              fluentMethods: true,
-              javadoc: undefined,
-              jpaMetamodelFiltering: false,
-              microserviceName: 'myMs',
-              pagination: 'no',
-              relationships: [],
-              service: 'no',
-            }
-          });
+          expect(Object.keys(content).length).to.eq(8);
+          expect(content.Department.relationships.length).to.eq(0);
+          expect(content.Department.fields.length).to.eq(2);
+          expect(content.Department.entityTableName).to.eq('department');
+          expect(content.Employee.javadoc).to.eq('The Employee entity.');
+          expect(content.Employee.pagination).to.eq('infinite-scroll');
         });
       });
       context('when converting JDL to entity json for Cassandra type', () => {
         let content = null;
 
         before(() => {
-          jdlObject.relationships = new JDLRelationships();
+          const input = parseFromFiles(['./test/test_files/cassandra_jdl.jdl']);
           content = EntityParser.parse({
-            jdlObject,
-            applicationType: ApplicationTypes.GATEWAY,
-            databaseType: DatabaseTypes.CASSANDRA
+            jdlObject: JDLParser.parse(input, 'cassandra'),
+            databaseType: 'cassandra'
           });
         });
 
         it('converts it', () => {
           expect(content).not.to.be.null;
-          expect(Object.keys(content)).to.have.length(2);
-          expect(content.EntityA.changelogDate).not.to.be.undefined;
-          expect(content.EntityB.changelogDate).not.to.be.undefined;
-          delete content.EntityA.changelogDate;
-          delete content.EntityB.changelogDate;
-          expect(content).to.deep.equal({
-            EntityA: {
-              name: 'EntityA',
-              applications: '*',
-              clientRootFolder: '',
-              dto: 'no',
-              entityTableName: 'a',
-              fields: [
-                {
-                  fieldName: 'aa',
-                  fieldType: 'String',
-                  fieldValidateRules: ['required'],
-                  javadoc: 'My field'
-                },
-                {
-                  fieldName: 'ab',
-                  fieldType: 'ZonedDateTime'
-                }
-              ],
-              fluentMethods: true,
-              javadoc: undefined,
-              jpaMetamodelFiltering: false,
-              microserviceName: 'myMs',
-              pagination: 'pager',
-              relationships: [],
-              service: 'no',
-              skipClient: true
-            },
-            EntityB: {
-              name: 'EntityB',
-              applications: '*',
-              clientRootFolder: '',
-              dto: 'no',
-              entityTableName: 'entity_b',
-              fields: [
-                {
-                  fieldName: 'ba',
-                  fieldType: 'EnumA',
-                  fieldValues: 'A,B,C'
-                }
-              ],
-              fluentMethods: true,
-              javadoc: undefined,
-              jpaMetamodelFiltering: false,
-              microserviceName: 'myMs',
-              pagination: 'no',
-              relationships: [],
-              service: 'no',
-            }
+          expect(Object.keys(content).length).to.eq(8);
+          expect(content.Department.relationships.length).to.eq(0);
+          expect(content.Department.fields.length).to.eq(2);
+          expect(content.Department.entityTableName).to.eq('department');
+          expect(content.Employee.javadoc).to.eq('The Employee entity.');
+          expect(content.Employee.pagination).to.eq('no');
+        });
+      });
+      context('when converting a JDL to JSON with a required relationship', () => {
+        let content = null;
+
+        before(() => {
+          const input = parseFromFiles(['./test/test_files/required_relationships.jdl']);
+          content = EntityParser.parse({
+            jdlObject: JDLParser.parse(input, 'sql'),
+            databaseType: 'sql'
+          });
+        });
+
+        it('converts it', () => {
+          expect(content.A.relationships).to.deep.eq([{
+            otherEntityField: 'id',
+            otherEntityName: 'b',
+            otherEntityRelationshipName: 'a',
+            ownerSide: true,
+            relationshipName: 'b',
+            relationshipType: 'one-to-one',
+            relationshipValidateRules: 'required'
+          }]);
+        });
+      });
+      context('when converting a JDL to JSON with fluent methods', () => {
+        let input = null;
+        let content = null;
+
+        before(() => {
+          input = parseFromFiles(['./test/test_files/fluent_methods.jdl']);
+          content = EntityParser.parse({
+            jdlObject: JDLParser.parse(input, 'sql'),
+            databaseType: 'sql'
+          });
+        });
+
+        it('converts it', () => {
+          expect(content.A.fluentMethods).to.be.false;
+          expect(content.B.fluentMethods).to.be.true;
+          expect(content.C.fluentMethods).to.be.true;
+        });
+
+        context('when converting twice', () => {
+          before(() => {
+            input = parseFromFiles(['./test/test_files/fluent_methods2.jdl']);
+            content = EntityParser.parse({
+              jdlObject: JDLParser.parse(input, 'sql'),
+              databaseType: 'sql'
+            });
+          });
+
+          it('converts it', () => {
+            expect(content.A.fluentMethods).to.be.true;
+            expect(content.B.fluentMethods).to.be.false;
+            expect(content.C.fluentMethods).to.be.false;
           });
         });
       });
@@ -457,50 +244,10 @@ describe('EntityParser', () => {
         let content = null;
 
         before(() => {
-          const entityA = new JDLEntity({
-            name: 'A'
-          });
-          const entityB = new JDLEntity({
-            name: 'B'
-          });
-          const oneToManyRelationship = new JDLRelationship({
-            from: entityA,
-            to: entityB,
-            injectedFieldInFrom: 'b',
-            injectedFieldInTo: 'a',
-            type: RelationshipTypes.ONE_TO_MANY
-          });
-          const manyToOneRelationship = new JDLRelationship({
-            from: entityA,
-            to: entityB,
-            injectedFieldInFrom: 'bb',
-            injectedFieldInTo: 'aa',
-            type: RelationshipTypes.MANY_TO_ONE
-          });
-          const manyToManyRelationship = new JDLRelationship({
-            from: entityA,
-            to: entityB,
-            injectedFieldInFrom: 'bbb',
-            injectedFieldInTo: 'aaa',
-            type: RelationshipTypes.MANY_TO_MANY
-          });
-          const oneToOneRelationship = new JDLRelationship({
-            from: entityA,
-            to: entityB,
-            injectedFieldInFrom: 'bbbb',
-            injectedFieldInTo: 'aaaa',
-            type: RelationshipTypes.ONE_TO_ONE
-          });
-          const jdlObject = new JDLObject();
-          jdlObject.addEntity(entityA);
-          jdlObject.addEntity(entityB);
-          jdlObject.addRelationship(oneToManyRelationship);
-          jdlObject.addRelationship(oneToOneRelationship);
-          jdlObject.addRelationship(manyToManyRelationship);
-          jdlObject.addRelationship(manyToOneRelationship);
+          const input = parseFromFiles(['./test/test_files/different_relationship_types.jdl']);
           content = EntityParser.parse({
-            jdlObject,
-            databaseType: DatabaseTypes.SQL
+            jdlObject: JDLParser.parse(input, 'sql'),
+            databaseType: 'sql'
           });
         });
 
@@ -573,27 +320,10 @@ describe('EntityParser', () => {
         let content = null;
 
         before(() => {
-          const jdlObject = new JDLObject();
-          jdlObject.addEntity(new JDLEntity({
-            name: 'A',
-            fields: {
-              anyBlob: new JDLField({
-                name: 'anyBlob',
-                type: FieldTypes.CommonDBTypes.ANY_BLOB
-              }),
-              imageBlob: new JDLField({
-                name: 'imageBlob',
-                type: FieldTypes.CommonDBTypes.IMAGE_BLOB
-              }),
-              textBlob: new JDLField({
-                name: 'textBlob',
-                type: FieldTypes.CommonDBTypes.TEXT_BLOB
-              })
-            }
-          }));
+          const input = parseFromFiles(['./test/test_files/blob_jdl.jdl']);
           content = EntityParser.parse({
-            jdlObject,
-            databaseType: DatabaseTypes.SQL
+            jdlObject: JDLParser.parse(input, 'sql'),
+            databaseType: 'sql'
           });
         });
 
@@ -619,50 +349,16 @@ describe('EntityParser', () => {
           );
         });
       });
-      context('when converting a JDL with elastic except', () => {
-        let content = null;
-
-        before(() => {
-          const entityA = new JDLEntity({ name: 'A' });
-          const entityB = new JDLEntity({ name: 'B' });
-          const option = new JDLBinaryOption({
-            name: BinaryOptions.SEARCH_ENGINE,
-            value: 'elasticsearch',
-            excludedNames: ['B']
-          });
-          const jdlObject = new JDLObject();
-          jdlObject.addEntity(entityA);
-          jdlObject.addEntity(entityB);
-          jdlObject.addOption(option);
-          content = EntityParser.parse({
-            jdlObject,
-            databaseType: DatabaseTypes.SQL
-          });
-        });
-
-        it('converts it', () => {
-          expect(content.A.searchEngine).to.equal('elasticsearch');
-          expect(content.B.searchEngine).to.be.false;
-        });
-      });
       context('when converting a JDL with filtering', () => {
         context('if there was not a service option for entity', () => {
           let content = null;
 
           before(() => {
-            const entityA = new JDLEntity({ name: 'A' });
-            const entityB = new JDLEntity({ name: 'B' });
-            const option = new JDLUnaryOption({
-              name: UnaryOptions.FILTER,
-              excludedNames: ['B']
-            });
-            const jdlObject = new JDLObject();
-            jdlObject.addEntity(entityA);
-            jdlObject.addEntity(entityB);
-            jdlObject.addOption(option);
+            const input = parseFromFiles(['./test/test_files/filtering_without_service.jdl']);
+            const jdlObject = JDLParser.parse(input, 'sql');
             content = EntityParser.parse({
               jdlObject,
-              databaseType: DatabaseTypes.SQL
+              databaseType: 'sql'
             });
           });
 
@@ -681,25 +377,10 @@ describe('EntityParser', () => {
           let content = null;
 
           before(() => {
-            const entityA = new JDLEntity({ name: 'A' });
-            const entityB = new JDLEntity({ name: 'B' });
-            const filterOption = new JDLUnaryOption({
-              name: UnaryOptions.FILTER,
-              excludedNames: ['B']
-            });
-            const serviceOption = new JDLBinaryOption({
-              name: BinaryOptions.SERVICE,
-              value: BinaryOptionValues.service.SERVICE_IMPL,
-              entityNames: ['A']
-            });
-            const jdlObject = new JDLObject();
-            jdlObject.addEntity(entityA);
-            jdlObject.addEntity(entityB);
-            jdlObject.addOption(filterOption);
-            jdlObject.addOption(serviceOption);
+            const input = parseFromFiles(['./test/test_files/filtering_with_service.jdl']);
             content = EntityParser.parse({
-              jdlObject,
-              databaseType: DatabaseTypes.SQL
+              jdlObject: JDLParser.parse(input, 'sql'),
+              databaseType: 'sql'
             });
           });
 
@@ -713,157 +394,24 @@ describe('EntityParser', () => {
           });
         });
       });
-      context('when parsing a JDL application with entities inside', () => {
-        let content = null;
+      context('when converting a JDL inside a microservice app', () => {
+        context('without the microservice option in the JDL', () => {
+          let content = null;
 
-        before(() => {
-          const application = new JDLApplication({
-            config: {
-              baseName: 'MyApp',
-              applicationType: ApplicationTypes.MICROSERVICE
-            },
-            entities: ['A']
+          before(() => {
+            const input = parseFromFiles(['./test/test_files/no_microservice.jdl']);
+            content = EntityParser.parse({
+              jdlObject: JDLParser.parse(input, DatabaseTypes.sql, ApplicationTypes.MICROSERVICE, 'toto'),
+              databaseType: DatabaseTypes.sql
+            });
           });
-          const entityA = new JDLEntity({ name: 'A' });
-          const entityB = new JDLEntity({ name: 'B' });
-          const jdlObject = new JDLObject();
-          jdlObject.addApplication(application);
-          jdlObject.addEntity(entityA);
-          jdlObject.addEntity(entityB);
-          content = EntityParser.parse({
-            jdlObject,
-            databaseType: DatabaseTypes.SQL
+
+          it('adds it to every entity', () => {
+            Object.keys(content).forEach((entityName) => {
+              expect(content[entityName].microserviceName).to.equal('toto');
+            });
           });
         });
-
-        it('adds the application name inside the entities', () => {
-          expect(content.A.applications).to.deep.equal(['MyApp']);
-        });
-        it('does not add the application name if excluded', () => {
-          expect(content.B.applications).to.deep.equal([]);
-        });
-      });
-      context('when parsing a relationship with no from injected field for a one-to-one', () => {
-        let content = null;
-
-        before(() => {
-          const entityA = new JDLEntity({ name: 'A' });
-          const entityB = new JDLEntity({ name: 'B' });
-          const relationship = new JDLRelationship({
-            from: entityA,
-            to: entityB,
-            injectedFieldInTo: 'a',
-            type: RelationshipTypes.ONE_TO_ONE
-          });
-          const jdlObject = new JDLObject();
-          jdlObject.addEntity(entityA);
-          jdlObject.addEntity(entityB);
-          jdlObject.addRelationship(relationship);
-          content = EntityParser.parse({
-            jdlObject,
-            databaseType: DatabaseTypes.SQL
-          });
-        });
-
-        it('sets one by default', () => {
-          expect(content.A.relationships[0].relationshipName).to.equal('b');
-          expect(content.B.relationships[0].otherEntityRelationshipName).to.equal('a');
-        });
-      });
-    });
-    context('when passing \'no\' as database type', () => {
-      let jdlObject = null;
-      let result = null;
-
-      before(() => {
-        jdlObject = new JDLObject();
-        const entity = new JDLEntity({
-          name: 'Toto'
-        });
-        const field1 = new JDLField({
-          name: 'titi',
-          type: FieldTypes.CassandraTypes.UUID
-        });
-        const field2 = new JDLField({
-          name: 'tutu',
-          type: FieldTypes.CommonDBTypes.STRING
-        });
-        entity.addField(field1);
-        entity.addField(field2);
-        jdlObject.addEntity(entity);
-        result = EntityParser.parse({
-          jdlObject,
-          databaseType: DatabaseTypes.NO,
-          applicationType: ApplicationTypes.MICROSERVICE
-        });
-        delete result.Toto.changelogDate;
-      });
-
-      it('converts everything into JSON', () => {
-        expect(result).to.deep.equal({
-          Toto: {
-            name: 'Toto',
-            applications: '*',
-            clientRootFolder: '',
-            dto: 'no',
-            entityTableName: 'toto',
-            fields: [
-              {
-                fieldName: 'titi',
-                fieldType: 'UUID'
-              },
-              {
-                fieldName: 'tutu',
-                fieldType: 'String'
-              }
-            ],
-            fluentMethods: true,
-            javadoc: undefined,
-            jpaMetamodelFiltering: false,
-            pagination: 'no',
-            relationships: [],
-            service: 'no'
-          }
-        });
-      });
-    });
-    context('when passing a JDL object with a wrong field type', () => {
-      let jdlObject = null;
-
-      before(() => {
-        const entityA = new JDLEntity({
-          name: 'A'
-        });
-        const entityB = new JDLEntity({
-          name: 'B'
-        });
-        const relationship = new JDLRelationship({
-          from: entityA,
-          to: entityB,
-          type: RelationshipTypes.ONE_TO_MANY,
-          injectedFieldInFrom: 'b',
-          injectedFieldInTo: 'a'
-        });
-        const field = new JDLField({
-          name: 'toto',
-          type: 'DoesNotExistAtAll'
-        });
-        jdlObject = new JDLObject();
-        entityA.addField(field);
-        jdlObject.addEntity(entityA);
-        jdlObject.addEntity(entityB);
-        jdlObject.addRelationship(relationship);
-      });
-
-      it('fails', () => {
-        expect(() => {
-          EntityParser.parse({
-            jdlObject,
-            databaseType: DatabaseTypes.SQL,
-            applicationType: ApplicationTypes.MICROSERVICE
-          });
-        }).to.throw('No valable field type could be resolved for field \'toto\' of entity \'A\', ' +
-          'got \'DoesNotExistAtAll\'');
       });
     });
   });
